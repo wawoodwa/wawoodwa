@@ -93,8 +93,6 @@ footer .btn { padding: 0 12px; }
 .card p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
 .stars { font: 26px/1 var(--sans); letter-spacing: .15em; color: var(--flag); }
 .stars .off { color: var(--line); }
-.card .row { display: flex; gap: 10px; margin-top: 4px; }
-.card .row .btn { flex: 1; padding: 0 6px; font-size: 14px; white-space: nowrap; }
 .sheet {
   position: absolute; inset: 0; background: color-mix(in srgb, var(--paper) 92%, transparent);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
@@ -135,11 +133,6 @@ footer .btn { padding: 0 12px; }
       <h2 id="cardTitle">Bridge held</h2>
       <div class="stars" id="cardStars"></div>
       <p id="cardText"></p>
-      <div class="row">
-        <button class="btn" id="cardReplay">Replay</button>
-        <button class="btn" id="cardRetry">Redraw</button>
-        <button class="btn primary" id="cardNext">Next</button>
-      </div>
     </div>
     <div class="sheet" id="sheet" hidden>
       <h2>Choose a span</h2>
@@ -544,7 +537,6 @@ function finish(won, why) {
       ? `The car crossed using ${(used / UNIT).toFixed(1)} m of steel (${Math.round(ratio * 100)}% of the allowance). ${newBest && prev ? 'New best for this span.' : 'Use less steel for more stars.'}`
       : why + ' Try resting the bridge on the cliff edges or an outcrop.';
     $('card').hidden = false;
-    $('cardRetry').focus({ preventScroll: true });
   }, won ? 700 : 400);
 }
 function starHtml(n) {
@@ -686,14 +678,14 @@ $('levelList').addEventListener('click', e => {
 });
 $('btnLevels').onclick = () => { renderLevelList(); $('sheet').hidden = !$('sheet').hidden; };
 $('sheetClose').onclick = () => { $('sheet').hidden = true; };
-$('btnReplay').onclick = $('cardReplay').onclick = () => { $('sheet').hidden = true; startReplay(); };
+$('btnReplay').onclick = () => { $('sheet').hidden = true; startReplay(); };
 $('bestBtn').onclick = () => {
   const r = runs[level]; if (!r) return;
   $('sheet').hidden = true;
   startReplay(r.pts.map(([x, y]) => ({ x, y })), `Best run · ${(r.used / UNIT).toFixed(1)} m`);
 };
-$('btnRetry').onclick = $('cardRetry').onclick = () => { $('sheet').hidden = true; buildLevel(level); };
-$('btnNext').onclick = $('cardNext').onclick = () => { $('sheet').hidden = true; buildLevel(level + 1); };
+$('btnRetry').onclick = () => { $('sheet').hidden = true; buildLevel(level); };
+$('btnNext').onclick = () => { $('sheet').hidden = true; buildLevel(level + 1); };
 
 window.claude?.hot?.snapshot?.(() => ({ level }));
 const start = data => { buildLevel((data && data.level) || 0); requestAnimationFrame(frame); };
