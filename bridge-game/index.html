@@ -136,9 +136,10 @@ footer .btn { padding: 0 12px; }
       <div class="stars" id="cardStars"></div>
       <p id="cardText"></p>
       <div class="row">
-        <button class="btn" id="cardRetry">Redraw</button>
+        <button class="btn" id="cardLevels">Spans</button>
         <button class="btn" id="cardReplay">Replay</button>
-        <button class="btn primary" id="cardNext">Next span</button>
+        <button class="btn" id="cardRetry">Redraw</button>
+        <button class="btn primary" id="cardNext">Next</button>
       </div>
     </div>
     <div class="sheet" id="sheet" hidden>
@@ -246,7 +247,7 @@ let dpr = 1, cw = 0, ch = 0, s = 1, ox = 0, oy = 0;
 let level = 0, L, engine, terrain = [], chassis, wheels = [], bridge = null, bridgeLocal = [];
 let state = 'draw', points = [], used = 0, drawing = false, ghost = null;
 let simTime = 0, motorAt = 0, motorOn = false, motorTarget = MOTOR, maxX = 0, lastProgress = 0, flipT = 0;
-let flagX = 0, cardTimer = 0;
+let flagX = 0, cardTimer = 0, arrived = false, arriveT = 0, settleT = 0;
 let lastStroke = null, replay = null;   // last released stroke, and the stroke being redrawn for a replay
 
 // ---------- saved progress (per-viewer convenience only) ----------
@@ -331,7 +332,7 @@ function buildLevel(i) {
 
   flagX = Math.min(380, L.R.x + 62);
   bridge = null; bridgeLocal = []; points = []; used = 0; drawing = false; ghost = null;
-  simTime = 0; motorOn = false; motorTarget = MOTOR; flipT = 0;
+  simTime = 0; motorOn = false; motorTarget = MOTOR; flipT = 0; arrived = false; arriveT = 0; settleT = 0;
   state = 'draw'; replay = null;
 
   const gap = ((L.R.x - L.L.x) / UNIT).toFixed(1);
@@ -482,10 +483,20 @@ function step() {
   if (a > Math.PI) a -= Math.PI * 2; if (a < -Math.PI) a += Math.PI * 2;
   flipT = Math.abs(a) > 2 ? flipT + STEP : 0;
 
-  if (c.x >= flagX && c.y < L.R.y + 5) finish(true);
+  // Past the flag the car brakes; it wins only once it rests on both wheels, right side up, on the far cliff.
+  if (!arrived && c.x >= flagX) { arrived = true; motorTarget = 0; }
+  if (arrived) {
+    arriveT += STEP;
+    const ground = bridge ? [...terrain, bridge] : terrain;
+    const onWheels = Math.abs(a) < 0.7 && c.y < L.R.y + 5 && wheels.every(w => Query.collides(w, ground).length);
+    settleT = onWheels ? settleT + STEP : 0;
+  }
+
+  if (arrived && settleT >= 500) finish(true);
   else if (c.y > 950) finish(false, 'The car dropped into the canyon.');
   else if (flipT > 1000) finish(false, 'The car flipped over.');
-  else if (motorOn && simTime - lastProgress > 3500) finish(false, 'The car got stuck and could not move forward.');
+  else if (arrived && arriveT > 3000) finish(false, 'The car reached the far side but did not land on its wheels.');
+  else if (!arrived && motorOn && simTime - lastProgress > 3500) finish(false, 'The car got stuck and could not move forward.');
 }
 
 // ---------- replay: rebuild the span, redraw the saved stroke at drawing speed, then drop it ----------
@@ -528,8 +539,6 @@ function finish(won, why) {
     $('cardText').textContent = won
       ? `The car crossed using ${(used / UNIT).toFixed(1)} m of steel (${Math.round(ratio * 100)}% of the allowance). ${newBest && prev ? 'New best for this span.' : 'Use less steel for more stars.'}`
       : why + ' Try resting the bridge on the cliff edges or an outcrop.';
-    const last = level === LEVELS.length - 1;
-    $('cardNext').textContent = won ? (last ? 'Back to span 01' : 'Next span') : 'Skip span';
     $('card').hidden = false;
     $('cardRetry').focus({ preventScroll: true });
   }, won ? 700 : 400);
@@ -671,7 +680,7 @@ $('levelList').addEventListener('click', e => {
   const b = e.target.closest('.lvl'); if (!b) return;
   $('sheet').hidden = true; buildLevel(+b.dataset.i);
 });
-$('btnLevels').onclick = () => { renderLevelList(); $('sheet').hidden = !$('sheet').hidden; };
+$('btnLevels').onclick = $('cardLevels').onclick = () => { renderLevelList(); $('sheet').hidden = !$('sheet').hidden; };
 $('sheetClose').onclick = () => { $('sheet').hidden = true; };
 $('btnReplay').onclick = $('cardReplay').onclick = () => { $('sheet').hidden = true; startReplay(); };
 $('bestBtn').onclick = () => {
