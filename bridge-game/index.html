@@ -574,12 +574,12 @@ function finish(won, why) {
   const newBest = won && (!prev || used < prev.used - 0.01);
   if (newBest) { runs[level] = { used, pts: points.map(p => [p.x, p.y]) }; saveRuns(); updateBestBtn(); }
   cardTimer = setTimeout(() => {
-    $('cardTitle').textContent = won ? 'Bridge held' : 'Bridge failed';
+    $('cardTitle').textContent = !won ? 'Bridge failed' : stars === 3 ? 'Great job!' : 'Bridge held';
     $('cardTitle').className = won ? 'win' : 'lose';
     $('cardStars').innerHTML = won ? starHtml(stars) : '';
     $('cardStars').hidden = !won;
     $('cardText').textContent = won
-      ? `The car crossed using ${(used / UNIT).toFixed(1)} m of steel (${pct}% of the allowance). ${newBest && prev ? 'New best for this span.' : 'Use less steel for more stars.'}`
+      ? `The car crossed using ${(used / UNIT).toFixed(1)} m of steel (${pct}% of the allowance). ${[newBest && prev ? 'New best for this span.' : '', stars < 3 ? 'Use less steel for more stars.' : ''].filter(Boolean).join(' ')}`
       : why + ' Try resting the bridge on the cliff edges or an outcrop.';
     $('card').hidden = false;
   }, won ? 700 : 400);
