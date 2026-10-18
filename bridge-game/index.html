@@ -136,7 +136,6 @@ footer .btn { padding: 0 12px; }
       <div class="stars" id="cardStars"></div>
       <p id="cardText"></p>
       <div class="row">
-        <button class="btn" id="cardLevels">Spans</button>
         <button class="btn" id="cardReplay">Replay</button>
         <button class="btn" id="cardRetry">Redraw</button>
         <button class="btn primary" id="cardNext">Next</button>
@@ -685,7 +684,7 @@ $('levelList').addEventListener('click', e => {
   const b = e.target.closest('.lvl'); if (!b) return;
   $('sheet').hidden = true; buildLevel(+b.dataset.i);
 });
-$('btnLevels').onclick = $('cardLevels').onclick = () => { renderLevelList(); $('sheet').hidden = !$('sheet').hidden; };
+$('btnLevels').onclick = () => { renderLevelList(); $('sheet').hidden = !$('sheet').hidden; };
 $('sheetClose').onclick = () => { $('sheet').hidden = true; };
 $('btnReplay').onclick = $('cardReplay').onclick = () => { $('sheet').hidden = true; startReplay(); };
 $('bestBtn').onclick = () => {
