@@ -2,7 +2,7 @@
 
 A portrait-phone arcade shooter. A squad runs forward and fires automatically. The player drags left and right to steer it through paired gates (+N, −N, ×N, ÷N, or a weapon for the whole squad), around hordes of foes, and into a boss at the end. Stars count the soldiers alive when the boss falls.
 
-- **Live page:** published from `index.html`; link in the repo `README.md`. Republish updates to the same link.
+- **Live page:** https://claude.ai/artifact/8ik6JLBA8QhFJZcgQFFbLe (published from `index.html`). Republish updates to this same link.
 - **Owner preferences:** same as Span Sketch (see `../bridge-game/CLAUDE.md` and the repo `CLAUDE.md`).
 
 ## Files
