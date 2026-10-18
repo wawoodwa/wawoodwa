@@ -2,8 +2,8 @@
 
 A portrait-phone physics puzzle. The player draws a bridge with a finger. On lift, gravity turns on, the bridge drops as one rigid piece, and a car drives across. 100 spans ("levels").
 
-- **Live page:** https://claude.ai/artifact/1YkSDNx7R8XVEyoGAhi553 (published from `index.html`; republish the same file path to keep the URL)
-- **Branch:** `bridge-game` in `wawoodwa/wawoodwa`
+- **Live page:** https://claude.ai/artifact/1YkSDNx7R8XVEyoGAhi553 (published from `index.html`)
+- **Repo:** `wawoodwa/wawoodwa` (the owner's GitHub profile repo), directory `bridge-game/`. A later move to its own repo, `dev-website-games`, is planned.
 - **Owner preferences:** designed for a phone held upright. The owner tests on their phone and gives short, direct feedback. Make the change, verify it, publish, commit and push.
 
 ## Files
@@ -93,5 +93,5 @@ node tools/playtest.js tools/example-cases.json 5   # 5 parallel browser pages
 ## Workflow
 1. Edit `index.html`.
 2. Playtest, using a temp copy with a doctype and a local Matter.js. `tools/playtest.js` does this.
-3. Publish: Artifact tool with `file_path: bridge-game/index.html`, no `url`, same path. This keeps the URL.
-4. Commit on `bridge-game` and push with `git push -u origin bridge-game`. No pull request unless asked.
+3. Publish: Artifact tool with `file_path` pointing at `bridge-game/index.html` and `url: https://claude.ai/artifact/1YkSDNx7R8XVEyoGAhi553`, so the update lands on the existing page. A publish from a new session or a new clone path without `url` creates a separate page; read the artifact first, as the tool requires.
+4. Work on a branch, commit, and push. No pull request unless asked.
