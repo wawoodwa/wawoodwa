@@ -262,7 +262,18 @@ let state = 'draw', points = [], used = 0, drawing = false, ghost = null;
 let simTime = 0, motorAt = 0, motorOn = false, motorTarget = MOTOR, maxX = 0, lastProgress = 0, flipT = 0;
 let flagX = 0, cardTimer = 0, arrived = false, arriveT = 0, settleT = 0;
 const wheelProbe = Bodies.circle(0, 0, WHEEL_R + 2.5);   // slightly larger than a wheel, never added to the world
-let carOff = { x: 0, y: 0 };
+let carOff = { x: 0, y: 0 }, dimY = 0;
+// Height for the gap dimension line: as close as possible to 46 units above the higher lip,
+// but never where the line or its label would overlap a rock.
+function clearDimY() {
+  const top = Math.min(L.L.y, L.R.y), base = top - 46;
+  const rocks = terrain.slice(2);
+  const clear = y => rocks.every(r => r.bounds.max.y < y - 10 || r.bounds.min.y > y + 10 ||
+    r.bounds.max.x < L.L.x || r.bounds.min.x > L.R.x);
+  for (let d = 0; d <= 200; d += 4)
+    for (const y of [base - d, base + d]) if (y <= top - 18 && y >= VIEW.y + 14 && clear(y)) return y;
+  return base;
+}
 let lastStroke = null, replay = null;   // last released stroke, and the stroke being redrawn for a replay
 
 // ---------- saved progress (per-viewer convenience only) ----------
@@ -355,6 +366,7 @@ function buildLevel(i) {
   Composite.add(engine.world, [chassis, ...wheels, ...axles]);
 
   flagX = Math.min(380, L.R.x + 62);
+  dimY = clearDimY();
   bridge = null; bridgeLocal = []; points = []; used = 0; drawing = false; ghost = null;
   simTime = 0; motorOn = false; motorTarget = MOTOR; flipT = 0; arrived = false; arriveT = 0; settleT = 0;
   state = 'draw'; replay = null;
@@ -599,8 +611,15 @@ function render() {
     ctx.stroke();
   }
 
+  // terrain
+  for (const b of terrain) {
+    poly(b.vertices);
+    ctx.fillStyle = hatch || C['rock-fill']; ctx.fill();
+    ctx.strokeStyle = C.rock; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  }
+
   // dimension line across the gap
-  const dy = Math.min(L.L.y, L.R.y) - 46;
+  const dy = dimY;
   ctx.strokeStyle = C.muted; ctx.fillStyle = C.muted; ctx.lineWidth = 1.2;
   ctx.setLineDash([3, 3]);
   ctx.beginPath(); ctx.moveTo(L.L.x, dy - 8); ctx.lineTo(L.L.x, L.L.y - 4); ctx.moveTo(L.R.x, dy - 8); ctx.lineTo(L.R.x, L.R.y - 4); ctx.stroke();
@@ -615,13 +634,6 @@ function render() {
   const tw = ctx.measureText(label).width + 8, mx = (L.L.x + L.R.x) / 2;
   ctx.fillStyle = C.paper; ctx.fillRect(mx - tw / 2, dy - 8, tw, 16);
   ctx.fillStyle = C.muted; ctx.fillText(label, mx, dy);
-
-  // terrain
-  for (const b of terrain) {
-    poly(b.vertices);
-    ctx.fillStyle = hatch || C['rock-fill']; ctx.fill();
-    ctx.strokeStyle = C.rock; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
-  }
 
   // goal flag
   const fy = L.R.y;
