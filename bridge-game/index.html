@@ -147,7 +147,7 @@ footer .grow { flex: 1; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script>
 (() => {
-const { Engine, Bodies, Body, Composite, Constraint, Vertices } = Matter;
+const { Engine, Bodies, Body, Composite, Constraint, Vertices, Query } = Matter;
 
 // World units: 20 units = 1 metre. View window shown on screen:
 const VIEW = { x: 0, y: 120, w: 400, h: 640 };
@@ -166,10 +166,30 @@ const LEVELS = [
       [[100,400],[165,408],[160,421],[100,440]] ] },
   { name: 'Uphill Haul', L: { x: 120, y: 460 }, R: { x: 290, y: 385 }, ink: 340, rocks: [
       [[300,432],[240,440],[245,452],[300,472]] ] },
-  { name: 'Wide Canyon', L: { x: 70, y: 360 }, R: { x: 330, y: 360 }, ink: 400, rocks: [
+  { name: 'Wide Canyon', L: { x: 90, y: 360 }, R: { x: 340, y: 360 }, ink: 400, rocks: [
       [[134,442],[158,442],[170,1600],[122,1600]],
       [[244,428],[268,428],[280,1600],[232,1600]] ] },
+  { name: 'Low Ceiling', L: { x: 110, y: 400 }, R: { x: 290, y: 400 }, ink: 260, rocks: [
+      [[140,296],[260,296],[244,350],[156,350]] ] },
+  { name: 'Long Drop', L: { x: 100, y: 330 }, R: { x: 300, y: 450 }, ink: 320, rocks: [
+      [[188,410],[212,410],[226,1600],[174,1600]] ] },
+  { name: 'Boulder in the Way', L: { x: 90, y: 390 }, R: { x: 310, y: 390 }, ink: 320, rocks: [
+      boulder(200, 385, 22) ] },
+  { name: 'Shelf Climb', L: { x: 100, y: 420 }, R: { x: 300, y: 350 }, ink: 300, rocks: [
+      [[240,350],[300,350],[300,378],[252,366]] ] },
+  { name: 'Stepping Stones', L: { x: 90, y: 350 }, R: { x: 330, y: 350 }, ink: 340, rocks: [
+      boulder(150, 412, 16), boulder(250, 412, 16) ] },
+  { name: 'Grand Gorge', L: { x: 90, y: 330 }, R: { x: 340, y: 420 }, ink: 400, rocks: [
+      boulder(205, 372, 24), [[140,444],[164,444],[176,1600],[128,1600]] ] },
 ];
+
+// Convex rock outline (octagon) for floating boulders.
+function boulder(cx, cy, r) {
+  return Array.from({ length: 8 }, (_, i) => {
+    const a = (i + 0.5) * Math.PI / 4;
+    return [Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r)];
+  });
+}
 
 const $ = id => document.getElementById(id);
 const canvas = $('c'), ctx = canvas.getContext('2d');
@@ -297,7 +317,7 @@ function blocked(p) {
     for (let i = 0; i < vs.length; i++) if (segDist(p, vs[i], vs[(i + 1) % vs.length]) < clear) return true;
   }
   const c = chassis.position;
-  return p.x > c.x - 30 - clear && p.x < c.x + 30 + clear && p.y > c.y - 22 - clear && p.y < L.L.y + clear;
+  return p.x > c.x - 27 - clear && p.x < c.x + 27 + clear && p.y > c.y - 22 - clear && p.y < L.L.y + clear;
 }
 function segBlocked(a, b) {
   const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2.5));
@@ -374,6 +394,21 @@ function step() {
   if (state === 'run' && !motorOn && simTime >= motorAt) { motorOn = true; $('hint').hidden = true; }
   if (motorOn) for (const w of wheels)
     Body.setAngularVelocity(w, w.angularVelocity + (motorTarget - w.angularVelocity) * (motorTarget ? 0.2 : 0.35));
+  // Wheel spin alone gives little grip in Matter, so push the chassis along its heading while a wheel touches ground.
+  if (motorOn && motorTarget) {
+    const ground = bridge ? [...terrain, bridge] : terrain;
+    const hx = Math.cos(chassis.angle), hy = Math.sin(chassis.angle);
+    const v = chassis.velocity.x * hx + chassis.velocity.y * hy;
+    if (v < motorTarget * WHEEL_R) for (const w of wheels) {
+      const hits = Query.collides(w, ground);
+      if (!hits.length) continue;
+      const f = { x: hx * 0.0011, y: hy * 0.0011 };
+      Body.applyForce(chassis, chassis.position, f);
+      // equal and opposite push on the bridge, so a loose bridge can be shoved off its supports
+      if (bridge && hits.some(h => h.bodyA.parent === bridge || h.bodyB.parent === bridge))
+        Body.applyForce(bridge, w.position, { x: -f.x, y: -f.y });
+    }
+  }
   Engine.update(engine, STEP);
   if (state !== 'run') return;
 
