@@ -161,66 +161,66 @@ const WHEEL_R = 11, MOTOR = 0.22, MOTOR_DELAY = 900;
 
 // Each span: cliff edges (x = cliff lip, y = top), steel allowance (units), extra outcrops (convex polygons).
 const LEVELS = [
-  { name: 'Dry Creek', L: { x: 130, y: 400 }, R: { x: 270, y: 400 }, ink: 234, rocks: [] },
-  { name: 'Twin Ledges', L: { x: 100, y: 390 }, R: { x: 300, y: 390 }, ink: 334, rocks: [
+  { name: 'Dry Creek', L: { x: 130, y: 400 }, R: { x: 270, y: 400 }, ink: 266, rocks: [] },
+  { name: 'Twin Ledges', L: { x: 100, y: 390 }, R: { x: 300, y: 390 }, ink: 366, rocks: [
       [[90,450],[150,455],[146,468],[90,490]],
       [[310,450],[250,455],[254,468],[310,490]] ] },
-  { name: 'The Needle', L: { x: 80, y: 380 }, R: { x: 320, y: 380 }, ink: 400, rocks: [
+  { name: 'The Needle', L: { x: 80, y: 380 }, R: { x: 320, y: 380 }, ink: 434, rocks: [
       [[184,452],[216,452],[232,1600],[168,1600]] ] },
-  { name: 'Step Down', L: { x: 110, y: 320 }, R: { x: 290, y: 450 }, ink: 370, rocks: [
+  { name: 'Step Down', L: { x: 110, y: 320 }, R: { x: 290, y: 450 }, ink: 404, rocks: [
       [[100,400],[165,408],[160,421],[100,440]] ] },
-  { name: 'Uphill Haul', L: { x: 120, y: 460 }, R: { x: 290, y: 385 }, ink: 310, rocks: [
+  { name: 'Uphill Haul', L: { x: 120, y: 460 }, R: { x: 290, y: 385 }, ink: 344, rocks: [
       [[300,432],[240,440],[245,452],[300,472]] ] },
-  { name: 'Wide Canyon', L: { x: 90, y: 360 }, R: { x: 340, y: 360 }, ink: 416, rocks: [
+  { name: 'Wide Canyon', L: { x: 90, y: 360 }, R: { x: 340, y: 360 }, ink: 450, rocks: [
       [[134,442],[158,442],[170,1600],[122,1600]],
       [[244,428],[268,428],[280,1600],[232,1600]] ] },
-  { name: 'Low Ceiling', L: { x: 110, y: 400 }, R: { x: 290, y: 400 }, ink: 300, rocks: [
+  { name: 'Low Ceiling', L: { x: 110, y: 400 }, R: { x: 290, y: 400 }, ink: 334, rocks: [
       [[140,296],[260,296],[244,350],[156,350]] ] },
-  { name: 'Long Drop', L: { x: 100, y: 330 }, R: { x: 300, y: 450 }, ink: 388, rocks: [
+  { name: 'Long Drop', L: { x: 100, y: 330 }, R: { x: 300, y: 450 }, ink: 422, rocks: [
       [[188,410],[212,410],[226,1600],[174,1600]] ] },
-  { name: 'Boulder in the Way', L: { x: 90, y: 390 }, R: { x: 310, y: 390 }, ink: 366, rocks: [
+  { name: 'Boulder in the Way', L: { x: 90, y: 390 }, R: { x: 310, y: 390 }, ink: 400, rocks: [
       boulder(200, 385, 22) ] },
-  { name: 'Shelf Climb', L: { x: 100, y: 420 }, R: { x: 300, y: 350 }, ink: 354, rocks: [
+  { name: 'Shelf Climb', L: { x: 100, y: 420 }, R: { x: 300, y: 350 }, ink: 386, rocks: [
       [[240,350],[300,350],[300,378],[252,366]] ] },
-  { name: 'Stepping Stones', L: { x: 90, y: 350 }, R: { x: 330, y: 350 }, ink: 400, rocks: [
+  { name: 'Stepping Stones', L: { x: 90, y: 350 }, R: { x: 330, y: 350 }, ink: 434, rocks: [
       boulder(150, 412, 16), boulder(250, 412, 16) ] },
-  { name: 'Grand Gorge', L: { x: 90, y: 330 }, R: { x: 340, y: 420 }, ink: 442, rocks: [
+  { name: 'Grand Gorge', L: { x: 90, y: 330 }, R: { x: 340, y: 420 }, ink: 476, rocks: [
       boulder(205, 372, 24), [[140,444],[164,444],[176,1600],[128,1600]] ] },
-  { name: 'Keyhole', L: { x: 100, y: 380 }, R: { x: 300, y: 410 }, ink: 338, rocks: [
+  { name: 'Keyhole', L: { x: 100, y: 380 }, R: { x: 300, y: 410 }, ink: 370, rocks: [
       [[150,300],[250,300],[240,346],[160,346]], boulder(200, 450, 16) ] },
-  { name: 'Big Step Up', L: { x: 110, y: 470 }, R: { x: 290, y: 390 }, ink: 328, rocks: [
+  { name: 'Big Step Up', L: { x: 110, y: 470 }, R: { x: 290, y: 390 }, ink: 362, rocks: [
       [[295,430],[250,440],[255,452],[295,470]] ] },
-  { name: 'Pinball', L: { x: 90, y: 360 }, R: { x: 310, y: 420 }, ink: 380, rocks: [
+  { name: 'Pinball', L: { x: 90, y: 360 }, R: { x: 310, y: 420 }, ink: 414, rocks: [
       boulder(170, 430, 14), boulder(240, 395, 14) ] },
-  { name: 'The Funnel', L: { x: 90, y: 350 }, R: { x: 310, y: 350 }, ink: 366, rocks: [
+  { name: 'The Funnel', L: { x: 90, y: 350 }, R: { x: 310, y: 350 }, ink: 400, rocks: [
       [[85,400],[175,450],[170,462],[85,430]], [[315,400],[225,450],[230,462],[315,430]] ] },
-  { name: 'Downhill Slalom', L: { x: 90, y: 300 }, R: { x: 320, y: 450 }, ink: 458, rocks: [
+  { name: 'Downhill Slalom', L: { x: 90, y: 300 }, R: { x: 320, y: 450 }, ink: 490, rocks: [
       boulder(160, 365, 14), boulder(245, 418, 14) ] },
-  { name: 'Final Exam', L: { x: 90, y: 340 }, R: { x: 340, y: 380 }, ink: 422, rocks: [
+  { name: 'Final Exam', L: { x: 90, y: 340 }, R: { x: 340, y: 380 }, ink: 456, rocks: [
       [[150,250],[250,250],[244,316],[156,316]], boulder(205, 420, 16) ] },
-  { name: "Needle's Eye", L: { x: 100, y: 370 }, R: { x: 300, y: 370 }, ink: 334, rocks: [
+  { name: "Needle's Eye", L: { x: 100, y: 370 }, R: { x: 300, y: 370 }, ink: 366, rocks: [
       [[160,240],[240,240],[232,330],[168,330]], [[186,420],[214,420],[226,1600],[174,1600]] ] },
-  { name: 'Tight Budget', L: { x: 90, y: 360 }, R: { x: 340, y: 360 }, ink: 416, rocks: [] },
-  { name: 'Three Pebbles', L: { x: 90, y: 380 }, R: { x: 310, y: 380 }, ink: 366, rocks: [
+  { name: 'Tight Budget', L: { x: 90, y: 360 }, R: { x: 340, y: 360 }, ink: 450, rocks: [] },
+  { name: 'Three Pebbles', L: { x: 90, y: 380 }, R: { x: 310, y: 380 }, ink: 400, rocks: [
       boulder(150, 412, 10), boulder(200, 404, 10), boulder(250, 412, 10) ] },
-  { name: 'Low Bridge', L: { x: 100, y: 380 }, R: { x: 300, y: 380 }, ink: 334, rocks: [
+  { name: 'Low Bridge', L: { x: 100, y: 380 }, R: { x: 300, y: 380 }, ink: 366, rocks: [
       [[262,280],[340,280],[340,330],[270,330]] ] },
-  { name: 'Pillar Stairs', L: { x: 100, y: 450 }, R: { x: 300, y: 380 }, ink: 354, rocks: [
+  { name: 'Pillar Stairs', L: { x: 100, y: 450 }, R: { x: 300, y: 380 }, ink: 386, rocks: [
       [[150,476],[170,476],[180,1600],[140,1600]], [[230,430],[250,430],[262,1600],[218,1600]] ] },
-  { name: 'Zigzag', L: { x: 90, y: 330 }, R: { x: 320, y: 330 }, ink: 384, rocks: [
+  { name: 'Zigzag', L: { x: 90, y: 330 }, R: { x: 320, y: 330 }, ink: 416, rocks: [
       boulder(155, 302, 13), boulder(255, 360, 14) ] },
-  { name: 'Grand Finale', L: { x: 90, y: 400 }, R: { x: 340, y: 340 }, ink: 428, rocks: [
+  { name: 'Grand Finale', L: { x: 90, y: 400 }, R: { x: 340, y: 340 }, ink: 462, rocks: [
       [[190,240],[250,240],[244,330],[196,330]], boulder(170, 450, 16) ] },
-  { name: 'Underpass', L: { x: 100, y: 360 }, R: { x: 300, y: 360 }, ink: 334, rocks: [
+  { name: 'Underpass', L: { x: 100, y: 360 }, R: { x: 300, y: 360 }, ink: 366, rocks: [
       [[170,250],[230,250],[226,338],[174,338]], boulder(200, 346, 10) ] },
-  { name: 'Ski Run', L: { x: 90, y: 300 }, R: { x: 320, y: 420 }, ink: 432, rocks: [
+  { name: 'Ski Run', L: { x: 90, y: 300 }, R: { x: 320, y: 420 }, ink: 466, rocks: [
       boulder(180, 370, 14) ] },
-  { name: 'Double Arch', L: { x: 90, y: 380 }, R: { x: 310, y: 380 }, ink: 366, rocks: [
+  { name: 'Double Arch', L: { x: 90, y: 380 }, R: { x: 310, y: 380 }, ink: 400, rocks: [
       [[125,260],[175,260],[170,340],[130,340]], [[225,260],[275,260],[270,340],[230,340]],
       [[190,410],[210,410],[220,1600],[180,1600]] ] },
-  { name: 'The Spire', L: { x: 100, y: 420 }, R: { x: 300, y: 420 }, ink: 334, rocks: [
+  { name: 'The Spire', L: { x: 100, y: 420 }, R: { x: 300, y: 420 }, ink: 366, rocks: [
       [[190,400],[210,400],[222,1600],[178,1600]] ] },
-  { name: 'The Last Span', L: { x: 90, y: 340 }, R: { x: 350, y: 400 }, ink: 444, rocks: [
+  { name: 'The Last Span', L: { x: 90, y: 340 }, R: { x: 350, y: 400 }, ink: 478, rocks: [
       [[150,240],[220,240],[215,316],[155,316]], boulder(240, 430, 14), [[140,440],[160,440],[170,1600],[130,1600]] ] },
 ];
 
