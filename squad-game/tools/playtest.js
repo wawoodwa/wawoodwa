@@ -102,6 +102,28 @@ function bot(li) {
   const overflow = await d.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   if (shotDir) { await d.emulateMedia({ colorScheme: 'dark' }); await d.waitForTimeout(1500); await d.screenshot({ path: path.join(shotDir, 'dark.png') }); }
 
+  // 4. Other screen sizes: mid-run screenshot of a best-run replay, and a drag check, on phones and tablets.
+  const DEVICES = [['phone-360x740', 360, 740], ['phone-430x932', 430, 932], ['ipad-mini-744x1133', 744, 1133],
+    ['ipad-820x1180', 820, 1180], ['ipad-landscape-1180x820', 1180, 820]];
+  const li0 = want.find(li => res[li].won);
+  for (const [name, vw, vh] of DEVICES) {
+    const p = await b.newPage({ viewport: { width: vw, height: vh } });
+    p.on('pageerror', e => errors.push(e.message));
+    await p.addInitScript(([k, r, li]) => { localStorage.setItem(k, r); localStorage.setItem('squad-surge-level', li); window.__speed = 4; }, [RUNS_KEY, JSON.stringify(runs), li0]);
+    await p.goto(url); await p.waitForTimeout(300);
+    const bx = await p.locator('#c').boundingBox();
+    // Drag a quarter of the track width; the squad should follow by the same world distance on every screen.
+    const sc = Math.min(bx.width / 360, bx.height / 600);
+    await p.mouse.move(bx.x + bx.width / 2, bx.y + bx.height * 0.7); await p.mouse.down();
+    await p.mouse.move(bx.x + bx.width / 2 + 90 * sc, bx.y + bx.height * 0.7, { steps: 10 }); await p.waitForTimeout(400);
+    const dx = await p.evaluate(() => window.__sim.cur.x); await p.mouse.up();
+    const ovf = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+    await p.click('#btnRetry'); await p.click('#bestBtn'); await p.waitForTimeout(2500);
+    if (shotDir) await p.screenshot({ path: path.join(shotDir, `device-${name}.png`) });
+    console.log(`${name.padEnd(24)} scale ${sc.toFixed(2)} | drag 180 -> ${dx.toFixed(0)} (expect ~270) | overflow ${ovf}`);
+    await p.close();
+  }
+
   for (const li of want) {
     const r = res[li], lv = LV[li];
     const same = r.rerun.n === r.n && r.rerun.won === r.won && r.rerun.t === r.t;

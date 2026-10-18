@@ -20,6 +20,7 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 - Firing: up to `SHOOTERS = 36` soldiers fire; with more soldiers each shot carries `n / 36` damage. Weapons in `WEAPONS` (fire interval in ticks, pellets).
 - Foes in `FOES`: hp, forward speed, sideways chase speed, `bite` (soldiers lost on contact), radius. They wake within `WAKE` units.
 - Loss: squad reaches 0, the boss reaches the squad, or 4 minutes pass.
+- **View:** every screen shows the same slice of the track, `W` wide by `VIEW_H = 600` deep (`VIEW_BACK = 120` of it behind the squad), scaled with `sc = min(cw / W, ch / VIEW_H)` and centred with offset `ox`. Tablets and landscape screens get plain shoulders at the sides, so gameplay matches the phone. Everything drawn on the canvas, including text and line widths, scales with `sc`.
 - Bullets fly `RANGE = 600` units, past the top of a portrait phone screen. It is a constant, not screen-based, so replays match on every device.
 - **Saved runs are tied to the simulation.** Bump `SIM_V` on any change to `tick()`, constants or levels' contents; runs saved under another version are dropped.
 - `window.__sim` exposes the simulation core for the playtester; `window.__speed` speeds up the real-time loop in tests.
@@ -50,4 +51,4 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 node squad-game/tools/playtest.js                 # all levels
 node squad-game/tools/playtest.js 2,4-5 --shots /path/to/dir
 ```
-Reports, per level: the bot's result, whether its inputs re-run identically, and the result card when the real UI replays the run through the Best chip. Also checks that a drag moves the squad and that the page doesn't overflow at 360px. After any change to the simulation, re-run all levels. Look at the screenshots (start, play, boss, end, dark mode) before publishing new content.
+Reports, per level: the bot's result, whether its inputs re-run identically, and the result card when the real UI replays the run through the Best chip. Also checks that a drag moves the squad and that the page doesn't overflow, on phone and iPad sizes (portrait and landscape), with a screenshot per device. After any change to the simulation, re-run all levels. Look at the screenshots (start, play, boss, end, dark mode) before publishing new content.
