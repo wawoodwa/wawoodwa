@@ -155,7 +155,7 @@ footer .grow { flex: 1; }
 const W = 360, MID = 180, STEP = 1000 / 60, DT = 1 / 60;
 const SPEED = 70;            // squad forward speed, units/s
 const MOVE = 9;              // max sideways squad move per tick
-const SHOT_V = 520, RANGE = 400;
+const SHOT_V = 520, RANGE = 600;   // reaches past the top of a portrait phone screen (~480-560 units visible ahead)
 const MAXN = 150, SHOOTERS = 36;   // above SHOOTERS soldiers, shots carry extra damage instead of extra bullets
 const WAKE = 620;            // foes start walking when this close
 const BOSS_V = 22, BOSS_R = 34, BOSS_WAKE = 300;
@@ -310,9 +310,11 @@ function run(li, inputs) {
 const $ = id => document.getElementById(id);
 let best = {}, runs = {};
 try { best = JSON.parse(localStorage.getItem('squad-surge-best') || '{}') || {}; } catch (e) { best = {}; }
-try { runs = JSON.parse(localStorage.getItem('squad-surge-runs') || '{}') || {}; } catch (e) { runs = {}; }
+// Saved runs are input recordings, valid only for the simulation they were recorded on: bump SIM_V on any change to tick().
+const SIM_V = 2, RUNS_KEY = 'squad-surge-runs-v' + SIM_V;
+try { runs = JSON.parse(localStorage.getItem(RUNS_KEY) || '{}') || {}; localStorage.removeItem('squad-surge-runs'); } catch (e) { runs = {}; }
 function saveBest() { try { localStorage.setItem('squad-surge-best', JSON.stringify(best)); } catch (e) {} }
-function saveRuns() { try { localStorage.setItem('squad-surge-runs', JSON.stringify(runs)); } catch (e) {} }
+function saveRuns() { try { localStorage.setItem(RUNS_KEY, JSON.stringify(runs)); } catch (e) {} }
 let startLevel = 0;
 try { startLevel = clamp(+localStorage.getItem('squad-surge-level') || 0, 0, LEVELS.length - 1); } catch (e) {}
 
@@ -568,7 +570,7 @@ window.addEventListener('resize', resize);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
 new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 // Headless test hooks (tools/playtest.js): the simulation core only.
-window.__sim = { LEVELS, create, tick, run, starsFor, MID, W, get cur() { return cur; } };
+window.__sim = { RUNS_KEY, LEVELS, create, tick, run, starsFor, MID, W, get cur() { return cur; } };
 readColors(); resize(); load(startLevel);
 requestAnimationFrame(frame);
 })();

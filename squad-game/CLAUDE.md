@@ -20,6 +20,8 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 - Firing: up to `SHOOTERS = 36` soldiers fire; with more soldiers each shot carries `n / 36` damage. Weapons in `WEAPONS` (fire interval in ticks, pellets).
 - Foes in `FOES`: hp, forward speed, sideways chase speed, `bite` (soldiers lost on contact), radius. They wake within `WAKE` units.
 - Loss: squad reaches 0, the boss reaches the squad, or 4 minutes pass.
+- Bullets fly `RANGE = 600` units, past the top of a portrait phone screen. It is a constant, not screen-based, so replays match on every device.
+- **Saved runs are tied to the simulation.** Bump `SIM_V` on any change to `tick()`, constants or levels' contents; runs saved under another version are dropped.
 - `window.__sim` exposes the simulation core for the playtester; `window.__speed` speeds up the real-time loop in tests.
 
 ## Level format (`LEVELS`)
@@ -40,7 +42,7 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 ## UI
 - Header: level number and current weapon, name, squad count, progress meter, Best chip (always present).
 - Footer: **Levels · Replay · Retry · Next**. The result card has no buttons.
-- localStorage (try/catch): `squad-surge-best` (stars), `squad-surge-runs` (most-survivors run per level), `squad-surge-level`.
+- localStorage (try/catch): `squad-surge-best` (stars), `squad-surge-runs-v<SIM_V>` (most-survivors run per level), `squad-surge-level`.
 
 ## Testing
 

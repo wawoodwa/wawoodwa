@@ -56,6 +56,7 @@ function bot(li) {
   };
 
   const probe = await newPage();
+  const RUNS_KEY = await probe.evaluate(() => window.__sim.RUNS_KEY);
   const LV = await probe.evaluate(() => window.__sim.LEVELS.map(l => ({ name: l.name, two: l.two, three: l.three })));
   let want = LV.map((_, i) => i);
   if (sel) want = sel.split(',').flatMap(r => { const [a, z] = r.split('-').map(Number); return Array.from({ length: (z || a) - a + 1 }, (_, k) => a - 1 + k); });
@@ -72,7 +73,7 @@ function bot(li) {
 
   // 2. Replay each bot run through the real UI via the Best chip.
   const runs = {}; for (const li of want) if (res[li].won) runs[li] = { n: res[li].n, in: res[li].inputs };
-  const ui = await newPage({ fn: r => { localStorage.setItem('squad-surge-runs', r); window.__speed = 12; }, arg: JSON.stringify(runs) });
+  const ui = await newPage({ fn: ([k, r]) => { localStorage.setItem(k, r); window.__speed = 12; }, arg: [RUNS_KEY, JSON.stringify(runs)] });
   for (const li of want) {
     if (!res[li].won) { res[li].ui = '(no win to replay)'; continue; }
     await ui.click('#btnLevels'); await ui.click(`.lvl[data-i="${li}"]`); await ui.waitForTimeout(100);
