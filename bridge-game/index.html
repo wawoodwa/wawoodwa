@@ -56,6 +56,12 @@ footer.bar { border-top: 1.5px solid var(--line); }
 .meter { width: 112px; height: 8px; border: 1.5px solid var(--ink); border-radius: 5px; overflow: hidden; }
 .meter i { display: block; height: 100%; width: 0%; background: var(--ink); transition: width .08s linear; }
 .meter.full i { background: var(--bad); }
+.best-chip {
+  font: 600 12px/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink);
+  background: transparent; border: 1.5px solid var(--ink); border-radius: 999px;
+  padding: 6px 10px; margin-top: 2px; cursor: pointer;
+}
+.best-chip:focus-visible { outline: 3px solid var(--flag); outline-offset: 2px; }
 #stage { flex: 1; position: relative; min-height: 0; }
 #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .hint {
@@ -119,6 +125,7 @@ footer .btn { padding: 0 12px; }
     <div class="steel" aria-live="polite">
       <div class="steel-read" id="steelRead">0.0 <span>/ 13.0 m steel</span></div>
       <div class="meter" id="meter"><i id="meterFill"></i></div>
+      <button class="best-chip" id="bestBtn" hidden>&#9654; Best <span id="bestVal">0.0</span> m</button>
     </div>
   </header>
   <div id="stage">
@@ -246,6 +253,15 @@ let lastStroke = null, replay = null;   // last released stroke, and the stroke 
 let best = {};
 try { best = JSON.parse(localStorage.getItem('span-sketch-best') || '{}') || {}; } catch (e) { best = {}; }
 function saveBest() { try { localStorage.setItem('span-sketch-best', JSON.stringify(best)); } catch (e) {} }
+// Least-steel winning stroke per span, kept with full precision so watching it reproduces the run exactly.
+let runs = {};
+try { runs = JSON.parse(localStorage.getItem('span-sketch-runs') || '{}') || {}; } catch (e) { runs = {}; }
+function saveRuns() { try { localStorage.setItem('span-sketch-runs', JSON.stringify(runs)); } catch (e) {} }
+function updateBestBtn() {
+  const r = runs[level];
+  $('bestBtn').hidden = !r;
+  if (r) $('bestVal').textContent = (r.used / UNIT).toFixed(1);
+}
 
 // ---------- theme colours, read from CSS tokens ----------
 let C = {}, hatch = null;
@@ -326,6 +342,7 @@ function buildLevel(i) {
   $('card').hidden = true;
   $('btnNext').disabled = false;
   $('btnReplay').disabled = !lastStroke;
+  updateBestBtn();
   updateMeter();
 }
 
@@ -472,14 +489,13 @@ function step() {
 }
 
 // ---------- replay: rebuild the span, redraw the saved stroke at drawing speed, then drop it ----------
-function startReplay() {
-  if (!lastStroke) return;
-  const stroke = lastStroke;
+function startReplay(stroke = lastStroke, label = 'Replay') {
+  if (!stroke) return;
   buildLevel(level);
   replay = { stroke, k: 1, dist: 0 };
   points = [stroke[0]];
   state = 'replay';
-  $('hint').textContent = 'Replay'; $('hint').hidden = false;
+  $('hint').textContent = label; $('hint').hidden = false;
 }
 function advanceReplay(dt) {
   const r = replay;
@@ -501,13 +517,16 @@ function finish(won, why) {
   const ratio = used / L.ink;
   const stars = won ? (ratio <= 0.6 ? 3 : ratio <= 0.8 ? 2 : 1) : 0;
   if (won && stars > (best[level] || 0)) { best[level] = stars; saveBest(); }
+  const prev = runs[level];
+  const newBest = won && (!prev || used < prev.used - 0.01);
+  if (newBest) { runs[level] = { used, pts: points.map(p => [p.x, p.y]) }; saveRuns(); updateBestBtn(); }
   cardTimer = setTimeout(() => {
     $('cardTitle').textContent = won ? 'Bridge held' : 'Bridge failed';
     $('cardTitle').className = won ? 'win' : 'lose';
     $('cardStars').innerHTML = won ? starHtml(stars) : '';
     $('cardStars').hidden = !won;
     $('cardText').textContent = won
-      ? `The car crossed using ${(used / UNIT).toFixed(1)} m of steel (${Math.round(ratio * 100)}% of the allowance). Use less steel for more stars.`
+      ? `The car crossed using ${(used / UNIT).toFixed(1)} m of steel (${Math.round(ratio * 100)}% of the allowance). ${newBest && prev ? 'New best for this span.' : 'Use less steel for more stars.'}`
       : why + ' Try resting the bridge on the cliff edges or an outcrop.';
     const last = level === LEVELS.length - 1;
     $('cardNext').textContent = won ? (last ? 'Back to span 01' : 'Next span') : 'Skip span';
@@ -645,6 +664,7 @@ function renderLevelList() {
       <small>Span ${String(i + 1).padStart(2, '0')} · ${((lv.R.x - lv.L.x) / UNIT).toFixed(1)} m gap</small>
       <b>${lv.name}</b>
       <span class="stars">${starHtml(best[i] || 0)}</span>
+      ${runs[i] ? `<small>Best ${(runs[i].used / UNIT).toFixed(1)} m</small>` : ''}
     </button>`).join('');
 }
 $('levelList').addEventListener('click', e => {
@@ -654,6 +674,11 @@ $('levelList').addEventListener('click', e => {
 $('btnLevels').onclick = () => { renderLevelList(); $('sheet').hidden = !$('sheet').hidden; };
 $('sheetClose').onclick = () => { $('sheet').hidden = true; };
 $('btnReplay').onclick = $('cardReplay').onclick = () => { $('sheet').hidden = true; startReplay(); };
+$('bestBtn').onclick = () => {
+  const r = runs[level]; if (!r) return;
+  $('sheet').hidden = true;
+  startReplay(r.pts.map(([x, y]) => ({ x, y })), `Best run · ${(r.used / UNIT).toFixed(1)} m`);
+};
 $('btnRetry').onclick = $('cardRetry').onclick = () => { $('sheet').hidden = true; buildLevel(level); };
 $('btnNext').onclick = $('cardNext').onclick = () => { $('sheet').hidden = true; buildLevel(level + 1); };
 
