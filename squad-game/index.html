@@ -9,6 +9,7 @@
   --road: #e8ecf0; --road-mark: #cdd5dd; --edge: #b9c4cf; --shoulder: #d3dae1;
   --squad: #2f6fe0; --squad-dark: #173e8c; --foe: #d8432c; --foe-dark: #8a2412;
   --gate-good: #1c9a5a; --gate-bad: #d23b3b; --gold: #d99a00; --shot: #e89a00;
+  --shot-rifle: #0f9fb8; --shot-shotgun: #c8358f; --shot-minigun: #7346d4;
   --text: #17202a; --muted: #5a6878; --panel: #ffffff; --line: #c7d2dc;
   --good: #1c8547; --bad: #c22f2f;
   --display: "Bungee", "Arial Black", Impact, sans-serif;
@@ -20,6 +21,7 @@
     --road: #161c25; --road-mark: #262f3c; --edge: #34404f; --shoulder: #0e131a;
     --squad: #5f97ff; --squad-dark: #a9c6ff; --foe: #ff6a4f; --foe-dark: #ffb3a3;
     --gate-good: #3ccf86; --gate-bad: #ff6060; --gold: #ffc93d; --shot: #ffd25a;
+  --shot-rifle: #4fd8ff; --shot-shotgun: #ff7ad1; --shot-minigun: #b69bff;
     --text: #e9f1f9; --muted: #9db2ca; --panel: #1d2531; --line: #34404f;
     --good: #6fe0a0; --bad: #ff8080;
     color-scheme: dark;
@@ -29,6 +31,7 @@
   --road: #161c25; --road-mark: #262f3c; --edge: #34404f; --shoulder: #0e131a;
   --squad: #5f97ff; --squad-dark: #a9c6ff; --foe: #ff6a4f; --foe-dark: #ffb3a3;
   --gate-good: #3ccf86; --gate-bad: #ff6060; --gold: #ffc93d; --shot: #ffd25a;
+  --shot-rifle: #4fd8ff; --shot-shotgun: #ff7ad1; --shot-minigun: #b69bff;
   --text: #e9f1f9; --muted: #9db2ca; --panel: #1d2531; --line: #34404f;
   --good: #6fe0a0; --bad: #ff8080;
   color-scheme: dark;
@@ -169,6 +172,8 @@ const WEAPONS = {
   shotgun: { name: 'Shotgun', every: 24, dmg: 1, pellets: 4 },
   minigun: { name: 'Minigun', every: 5,  dmg: 1, pellets: 1 },
 };
+// CSS colour token for each weapon's bullets
+const SHOT_COLOR = { pistol: 'shot', rifle: 'shot-rifle', shotgun: 'shot-shotgun', minigun: 'shot-minigun' };
 // hp, forward speed v, sideways chase speed, soldiers lost on contact, radius
 const FOES = {
   grunt:  { hp: 3,  v: 38, side: 14, bite: 1, r: 8 },
@@ -256,7 +261,7 @@ function tick(s, tx) {
   for (let j = 0; j < S; j++) if ((s.t + j * 7) % wp.every === 0) {
     const o = OFF[Math.floor(j * s.n / S)];
     for (let p = 0; p < wp.pellets; p++)
-      s.shots.push({ x: s.x + o[0], z: s.z + o[1] + 6, vx: (p - (wp.pellets - 1) / 2) * 60, d, life: RANGE });
+      s.shots.push({ x: s.x + o[0], z: s.z + o[1] + 6, vx: (p - (wp.pellets - 1) / 2) * 60, d, life: RANGE, w: s.wpn });
   }
 
   const b = s.boss, adv = SHOT_V * DT;
@@ -329,7 +334,7 @@ let cw = 0, ch = 0, dpr = 1, sc = 1, ox = 0, col = {};
 
 function readColors() {
   const cs = getComputedStyle(document.documentElement);
-  for (const k of ['road', 'road-mark', 'edge', 'shoulder', 'squad', 'squad-dark', 'foe', 'foe-dark', 'gate-good', 'gate-bad', 'gold', 'shot', 'text', 'panel'])
+  for (const k of ['road', 'road-mark', 'edge', 'shoulder', 'squad', 'squad-dark', 'foe', 'foe-dark', 'gate-good', 'gate-bad', 'gold', 'shot', 'shot-rifle', 'shot-shotgun', 'shot-minigun', 'text', 'panel'])
     col[k] = cs.getPropertyValue('--' + k).trim();
 }
 function resize() {
@@ -494,10 +499,13 @@ function render(now) {
     ctx.fillStyle = col.text; ctx.font = `600 ${Math.round(12 * sc)}px "IBM Plex Mono", monospace`;
     ctx.fillText('BOSS ' + Math.ceil(b.hp), x, y - r - 24 * sc);
   }
-  // Shots
-  ctx.strokeStyle = col.shot; ctx.lineWidth = 2 * sc; ctx.beginPath();
-  for (const sh of s.shots) { const x = X(sh.x), y = Y(sh.z); ctx.moveTo(x, y); ctx.lineTo(x - sh.vx * 0.015 * sc, y + 8 * sc); }
-  ctx.stroke();
+  // Shots, coloured by the weapon that fired them
+  ctx.lineWidth = 2 * sc;
+  for (const w in WEAPONS) {
+    ctx.strokeStyle = col[SHOT_COLOR[w]]; ctx.beginPath();
+    for (const sh of s.shots) if (sh.w === w) { const x = X(sh.x), y = Y(sh.z); ctx.moveTo(x, y); ctx.lineTo(x - sh.vx * 0.015 * sc, y + 8 * sc); }
+    ctx.stroke();
+  }
   // Squad
   const sr = 4.5 * sc;
   ctx.fillStyle = col.squad; ctx.strokeStyle = col['squad-dark']; ctx.lineWidth = 1.2 * sc;
