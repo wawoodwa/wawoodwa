@@ -48,7 +48,7 @@ body {
 header.bar { justify-content: space-between; border-bottom: 1.5px solid var(--line); }
 footer.bar { border-top: 1.5px solid var(--line); }
 .span-id { display: flex; flex-direction: column; min-width: 0; }
-.eyebrow { font: 600 11px/1.2 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.eyebrow { white-space: nowrap; font: 600 11px/1.2 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .span-name { font: 24px/1.1 var(--display); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .steel { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex: none; }
 .steel-read { font: 600 13px/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
@@ -71,7 +71,10 @@ footer.bar { border-top: 1.5px solid var(--line); }
 .btn:focus-visible { outline: 3px solid var(--flag); outline-offset: 2px; }
 .btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: default; transform: none; }
 footer .grow { flex: 1; }
+footer.bar { gap: 8px; }
+footer .btn { padding: 0 12px; }
 .card {
   position: absolute; left: 16px; right: 16px; bottom: 16px;
   margin-inline: auto; max-width: 380px;
@@ -85,7 +88,7 @@ footer .grow { flex: 1; }
 .stars { font: 26px/1 var(--sans); letter-spacing: .15em; color: var(--flag); }
 .stars .off { color: var(--line); }
 .card .row { display: flex; gap: 10px; margin-top: 4px; }
-.card .row .btn { flex: 1; }
+.card .row .btn { flex: 1; padding: 0 6px; font-size: 14px; white-space: nowrap; }
 .sheet {
   position: absolute; inset: 0; background: color-mix(in srgb, var(--paper) 92%, transparent);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
@@ -127,6 +130,7 @@ footer .grow { flex: 1; }
       <p id="cardText"></p>
       <div class="row">
         <button class="btn" id="cardRetry">Redraw</button>
+        <button class="btn" id="cardReplay">Replay</button>
         <button class="btn primary" id="cardNext">Next span</button>
       </div>
     </div>
@@ -139,6 +143,7 @@ footer .grow { flex: 1; }
   <footer class="bar">
     <button class="btn" id="btnLevels">Spans</button>
     <div class="grow"></div>
+    <button class="btn" id="btnReplay" disabled>Replay</button>
     <button class="btn" id="btnRetry">Redraw</button>
     <button class="btn primary" id="btnNext">Next</button>
   </footer>
@@ -206,6 +211,17 @@ const LEVELS = [
       boulder(155, 302, 13), boulder(255, 360, 14) ] },
   { name: 'Grand Finale', L: { x: 90, y: 400 }, R: { x: 340, y: 340 }, ink: 380, rocks: [
       [[190,240],[250,240],[244,330],[196,330]], boulder(170, 450, 16) ] },
+  { name: 'Underpass', L: { x: 100, y: 360 }, R: { x: 300, y: 360 }, ink: 320, rocks: [
+      [[170,250],[230,250],[226,338],[174,338]], boulder(200, 346, 10) ] },
+  { name: 'Ski Run', L: { x: 90, y: 300 }, R: { x: 320, y: 420 }, ink: 320, rocks: [
+      boulder(180, 370, 14) ] },
+  { name: 'Double Arch', L: { x: 90, y: 380 }, R: { x: 310, y: 380 }, ink: 320, rocks: [
+      [[125,260],[175,260],[170,340],[130,340]], [[225,260],[275,260],[270,340],[230,340]],
+      [[190,410],[210,410],[220,1600],[180,1600]] ] },
+  { name: 'The Spire', L: { x: 100, y: 420 }, R: { x: 300, y: 420 }, ink: 300, rocks: [
+      [[190,400],[210,400],[222,1600],[178,1600]] ] },
+  { name: 'The Last Span', L: { x: 90, y: 340 }, R: { x: 350, y: 400 }, ink: 380, rocks: [
+      [[150,240],[220,240],[215,316],[155,316]], boulder(240, 430, 14), [[140,440],[160,440],[170,1600],[130,1600]] ] },
 ];
 
 // Convex rock outline (octagon) for floating boulders.
@@ -224,6 +240,7 @@ let level = 0, L, engine, terrain = [], chassis, wheels = [], bridge = null, bri
 let state = 'draw', points = [], used = 0, drawing = false, ghost = null;
 let simTime = 0, motorAt = 0, motorOn = false, motorTarget = MOTOR, maxX = 0, lastProgress = 0, flipT = 0;
 let flagX = 0, cardTimer = 0;
+let lastStroke = null, replay = null;   // last released stroke, and the stroke being redrawn for a replay
 
 // ---------- saved progress (per-viewer convenience only) ----------
 let best = {};
@@ -270,7 +287,9 @@ function cliffPolys(lv) {
 }
 
 function buildLevel(i) {
-  level = (i + LEVELS.length) % LEVELS.length;
+  const next = (i + LEVELS.length) % LEVELS.length;
+  if (next !== level) lastStroke = null;
+  level = next;
   L = LEVELS[level];
   clearTimeout(cardTimer);
   engine = Engine.create({ positionIterations: 10, velocityIterations: 8, constraintIterations: 4 });
@@ -297,7 +316,7 @@ function buildLevel(i) {
   flagX = Math.min(380, L.R.x + 62);
   bridge = null; bridgeLocal = []; points = []; used = 0; drawing = false; ghost = null;
   simTime = 0; motorOn = false; motorTarget = MOTOR; flipT = 0;
-  state = 'draw';
+  state = 'draw'; replay = null;
 
   const gap = ((L.R.x - L.L.x) / UNIT).toFixed(1);
   $('spanNo').textContent = `Span ${String(level + 1).padStart(2, '0')} · gap ${gap} m`;
@@ -306,6 +325,7 @@ function buildLevel(i) {
   $('hint').hidden = false;
   $('card').hidden = true;
   $('btnNext').disabled = false;
+  $('btnReplay').disabled = !lastStroke;
   updateMeter();
 }
 
@@ -407,6 +427,8 @@ function release() {
   for (const p of parts) inertia += p.inertia + p.mass * ((p.position.x - o.x) ** 2 + (p.position.y - o.y) ** 2) * 4;
   Body.setInertia(bridge, inertia);
   bridgeLocal = points.map(p => ({ x: p.x - o.x, y: p.y - o.y }));
+  lastStroke = points.map(p => ({ ...p }));
+  $('btnReplay').disabled = false;
   Composite.add(engine.world, bridge);
   state = 'run';
   motorAt = simTime + MOTOR_DELAY; lastProgress = motorAt; maxX = chassis.position.x;
@@ -447,6 +469,29 @@ function step() {
   else if (c.y > 950) finish(false, 'The car dropped into the canyon.');
   else if (flipT > 1000) finish(false, 'The car flipped over.');
   else if (motorOn && simTime - lastProgress > 3500) finish(false, 'The car got stuck and could not move forward.');
+}
+
+// ---------- replay: rebuild the span, redraw the saved stroke at drawing speed, then drop it ----------
+function startReplay() {
+  if (!lastStroke) return;
+  const stroke = lastStroke;
+  buildLevel(level);
+  replay = { stroke, k: 1, dist: 0 };
+  points = [stroke[0]];
+  state = 'replay';
+  $('hint').textContent = 'Replay'; $('hint').hidden = false;
+}
+function advanceReplay(dt) {
+  const r = replay;
+  r.dist += dt * 0.32;                       // world units drawn per millisecond
+  while (r.k < r.stroke.length) {
+    const a = r.stroke[r.k - 1], b = r.stroke[r.k];
+    const d = Math.hypot(b.x - a.x, b.y - a.y);
+    if (r.dist < d) break;
+    r.dist -= d; points.push(b); used += d; r.k++;
+  }
+  updateMeter();
+  if (r.k >= r.stroke.length) { replay = null; release(); }
 }
 
 function finish(won, why) {
@@ -530,7 +575,7 @@ function render() {
 
   // bridge
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  if (state === 'draw') {
+  if (state === 'draw' || state === 'replay') {
     if (points.length) {
       ctx.strokeStyle = C.ink; ctx.lineWidth = T;
       ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
@@ -586,7 +631,8 @@ function render() {
 let last = performance.now(), accum = 0;
 function frame(now) {
   const dt = Math.min(64, now - last); last = now;
-  if (state !== 'draw') { accum += dt; while (accum >= STEP) { step(); accum -= STEP; } }
+  if (state === 'replay') advanceReplay(dt);
+  else if (state !== 'draw') { accum += dt; while (accum >= STEP) { step(); accum -= STEP; } }
   else accum = 0;
   if (cw > 0 && ch > 0) render();
   requestAnimationFrame(frame);
@@ -607,6 +653,7 @@ $('levelList').addEventListener('click', e => {
 });
 $('btnLevels').onclick = () => { renderLevelList(); $('sheet').hidden = !$('sheet').hidden; };
 $('sheetClose').onclick = () => { $('sheet').hidden = true; };
+$('btnReplay').onclick = $('cardReplay').onclick = () => { $('sheet').hidden = true; startReplay(); };
 $('btnRetry').onclick = $('cardRetry').onclick = () => { $('sheet').hidden = true; buildLevel(level); };
 $('btnNext').onclick = $('cardNext').onclick = () => { $('sheet').hidden = true; buildLevel(level + 1); };
 
