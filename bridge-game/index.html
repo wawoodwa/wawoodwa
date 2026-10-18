@@ -248,6 +248,7 @@ let level = 0, L, engine, terrain = [], chassis, wheels = [], bridge = null, bri
 let state = 'draw', points = [], used = 0, drawing = false, ghost = null;
 let simTime = 0, motorAt = 0, motorOn = false, motorTarget = MOTOR, maxX = 0, lastProgress = 0, flipT = 0;
 let flagX = 0, cardTimer = 0, arrived = false, arriveT = 0, settleT = 0;
+const wheelProbe = Bodies.circle(0, 0, WHEEL_R + 2.5);   // slightly larger than a wheel, never added to the world
 let lastStroke = null, replay = null;   // last released stroke, and the stroke being redrawn for a replay
 
 // ---------- saved progress (per-viewer convenience only) ----------
@@ -487,8 +488,12 @@ function step() {
   if (!arrived && c.x >= flagX) { arrived = true; motorTarget = 0; }
   if (arrived) {
     arriveT += STEP;
+    // Upright enough that it is not on its back or bumper, with at least one wheel on the bridge or rock.
     const ground = bridge ? [...terrain, bridge] : terrain;
-    const onWheels = Math.abs(a) < 0.7 && c.y < L.R.y + 5 && wheels.every(w => Query.collides(w, ground).length);
+    const onWheels = Math.abs(a) < 1 && c.y < L.R.y + 5 && wheels.some(w => {
+      Body.setPosition(wheelProbe, w.position);
+      return Query.collides(wheelProbe, ground).length > 0;
+    });
     settleT = onWheels ? settleT + STEP : 0;
   }
 
