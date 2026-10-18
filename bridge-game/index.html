@@ -523,7 +523,9 @@ function finish(won, why) {
   if (won) motorTarget = 0;
   else motorOn = false;
   const ratio = used / L.ink;
-  const stars = won ? (ratio <= 0.6 ? 3 : ratio <= 0.8 ? 2 : 1) : 0;
+  // Stars follow the percentage shown on the card: 60% or less = 3, 80% or less = 2, any other win = 1.
+  const pct = Math.round(ratio * 100);
+  const stars = won ? (pct <= 60 ? 3 : pct <= 80 ? 2 : 1) : 0;
   if (won && stars > (best[level] || 0)) { best[level] = stars; saveBest(); }
   const prev = runs[level];
   const newBest = won && (!prev || used < prev.used - 0.01);
@@ -534,7 +536,7 @@ function finish(won, why) {
     $('cardStars').innerHTML = won ? starHtml(stars) : '';
     $('cardStars').hidden = !won;
     $('cardText').textContent = won
-      ? `The car crossed using ${(used / UNIT).toFixed(1)} m of steel (${Math.round(ratio * 100)}% of the allowance). ${newBest && prev ? 'New best for this span.' : 'Use less steel for more stars.'}`
+      ? `The car crossed using ${(used / UNIT).toFixed(1)} m of steel (${pct}% of the allowance). ${newBest && prev ? 'New best for this span.' : 'Use less steel for more stars.'}`
       : why + ' Try resting the bridge on the cliff edges or an outcrop.';
     $('card').hidden = false;
   }, won ? 700 : 400);
