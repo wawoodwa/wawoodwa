@@ -262,6 +262,7 @@ let state = 'draw', points = [], used = 0, drawing = false, ghost = null;
 let simTime = 0, motorAt = 0, motorOn = false, motorTarget = MOTOR, maxX = 0, lastProgress = 0, flipT = 0;
 let flagX = 0, cardTimer = 0, arrived = false, arriveT = 0, settleT = 0;
 const wheelProbe = Bodies.circle(0, 0, WHEEL_R + 2.5);   // slightly larger than a wheel, never added to the world
+let carOff = { x: 0, y: 0 };
 let lastStroke = null, replay = null;   // last released stroke, and the stroke being redrawn for a replay
 
 // ---------- saved progress (per-viewer convenience only) ----------
@@ -337,12 +338,20 @@ function buildLevel(i) {
   // car: chassis + two wheels pinned on axles; negative group keeps car parts from colliding with each other
   const group = Body.nextGroup(true);
   const cx = Math.max(32, L.L.x - 72), top = L.L.y;
-  chassis = Bodies.rectangle(cx, top - WHEEL_R - 9, 48, 12, {
-    collisionFilter: { group }, density: 0.002, friction: 0.5, chamfer: { radius: 4 } });
+  // Body and cabin are one rigid compound, so the roof collides with rock just like the rest of the car.
+  const cy = top - WHEEL_R - 9;
+  const base = Bodies.rectangle(cx, cy, 48, 12, { density: 0.002, chamfer: { radius: 4 } });
+  const cabinVerts = [[-11, -6], [-6, -16], [9, -16], [16, -6]].map(([x, y]) => ({ x: cx + x, y: cy + y }));
+  const cabin = Bodies.fromVertices(0, 0, [cabinVerts], { density: 0.00005 });   // near-weightless: shape only
+  Body.setPosition(cabin, Vertices.centre(cabinVerts));
+  chassis = Body.create({ parts: [base, cabin], collisionFilter: { group }, friction: 0.5 });
+  [base, cabin].forEach(p => { p.collisionFilter = chassis.collisionFilter; p.friction = 0.5; });
+  carOff = { x: cx - chassis.position.x, y: cy - chassis.position.y };   // drawing origin relative to centre of mass
+  Body.setInertia(chassis, base.inertia);   // keep the handling the car had before the cabin collided
   wheels = [-16, 16].map(dx => Bodies.circle(cx + dx, top - WHEEL_R - 1, WHEEL_R, {
     collisionFilter: { group }, density: 0.0016, friction: 1, frictionStatic: 3, restitution: 0 }));
   const axles = wheels.map((w, k) => Constraint.create({
-    bodyA: chassis, pointA: { x: k ? 16 : -16, y: 8 }, bodyB: w, stiffness: 1, length: 0 }));
+    bodyA: chassis, pointA: { x: (k ? 16 : -16) + carOff.x, y: 8 + carOff.y }, bodyB: w, stiffness: 1, length: 0 }));
   Composite.add(engine.world, [chassis, ...wheels, ...axles]);
 
   flagX = Math.min(380, L.R.x + 62);
@@ -394,7 +403,7 @@ function blocked(p) {
     if (inside(p, vs)) return true;
     for (let i = 0; i < vs.length; i++) if (segDist(p, vs[i], vs[(i + 1) % vs.length]) < clear) return true;
   }
-  const c = chassis.position;
+  const c = { x: chassis.position.x + carOff.x, y: chassis.position.y + carOff.y };   // car body centre
   return p.x > c.x - 27 - clear && p.x < c.x + 27 + clear && p.y > c.y - 22 - clear && p.y < L.L.y + clear;
 }
 function segBlocked(a, b) {
@@ -664,7 +673,7 @@ function render() {
     ctx.beginPath(); ctx.moveTo(-WHEEL_R + 2.5, 0); ctx.lineTo(WHEEL_R - 2.5, 0); ctx.stroke();
     ctx.restore();
   }
-  ctx.save(); ctx.translate(chassis.position.x, chassis.position.y); ctx.rotate(chassis.angle);
+  ctx.save(); ctx.translate(chassis.position.x, chassis.position.y); ctx.rotate(chassis.angle); ctx.translate(carOff.x, carOff.y);
   ctx.fillStyle = C.car;
   ctx.beginPath(); ctx.moveTo(-11, -6); ctx.lineTo(-6, -16); ctx.lineTo(9, -16); ctx.lineTo(16, -6); ctx.closePath(); ctx.fill();
   ctx.fillStyle = C.paper;
