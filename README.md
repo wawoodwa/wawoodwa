@@ -1,10 +1,10 @@
-# dev-website-games
+- 👋 Hi, I’m @wawoodwa
+- 👀 I’m interested in many things.  IT, flying, programming, etc.
+- 🌱 I’m currently learning HomeKit & Homebridge.
+- 💞️ I’m looking to collaborate on Pi-hole and HomeKit.
+- 📫 How to reach me ... via Github I guess.
 
-Single-file HTML5 games built for phones held upright. Each game lives in its own directory.
-
-| Game | Directory | Play |
-|---|---|---|
-| Span Sketch: draw a bridge, drop it under gravity, and drive a car across 100 spans | [`bridge-game/`](bridge-game/) | [Play](https://claude.ai/artifact/1YkSDNx7R8XVEyoGAhi553) |
-| Squad Surge: steer a squad through number gates, grow it, upgrade its guns and beat the boss | [`squad-game/`](squad-game/) | [Play](https://claude.ai/artifact/8ik6JLBA8QhFJZcgQFFbLe) |
-
-Each game directory has its own `CLAUDE.md` describing how the game works and how to test it. `HANDOFF.md` is the prompt for starting the next game in a new Claude Code session.
+<!---
+wawoodwa/wawoodwa is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+You can click the Preview link to take a look at your changes.
+--->

@@ -1,18 +1,18 @@
 # Handoff: next session
 
-Create the empty `wawoodwa/dev-website-games` repo first. Then start a session with both `wawoodwa/wawoodwa` and `wawoodwa/dev-website-games` selected, and paste the prompt below. Fill in the game you want where it says so.
+Start a session with `wawoodwa/wawoodwa` selected and paste the prompt below. Fill in the game you want where it says so.
 
 ---
 
-Two tasks: first finish moving my games into their own repo, then build me a new game.
+Build me a new mobile game. **[Describe the game here.]**
 
-**Task 1: finish the move.** I created an empty repo, `wawoodwa/dev-website-games`. A previous session prepared its contents and saved them as branch `dev-website-games-import` in `wawoodwa/wawoodwa`. That branch holds the full history plus a final commit with a new README, a repo-level CLAUDE.md, and paths updated to the new repo.
-1. Push that branch to `main` of `wawoodwa/dev-website-games` and confirm the files are there: `README.md`, `CLAUDE.md`, `HANDOFF.md`, and `bridge-game/` with `index.html`, `CLAUDE.md` and `tools/`.
-2. In `wawoodwa/wawoodwa`, my GitHub profile repo, open a pull request that removes `bridge-game/` and `HANDOFF.md` so only my profile `README.md` remains. Delete the `bridge-game` and `dev-website-games-import` branches there. Show me the pull request before merging.
+My games live in `wawoodwa/wawoodwa`, my GitHub profile repo, one directory per game. `README.md` there is my profile page, so don't change it. List each game in `GAMES.md` instead. Read the repo `CLAUDE.md` first.
 
-**Task 2: a new game.** **[Describe the game here.]** Put it in its own directory in `wawoodwa/dev-website-games`, next to `bridge-game/`, and add it to the README's table of games.
+Two games exist already. Read their `CLAUDE.md` files and reuse the approach, not the games:
+- **Span Sketch** (`bridge-game/`): a bridge-drawing physics puzzle with 100 levels. `bridge-game/tools/playtest.js` is a headless Playwright playtester. Live: https://claude.ai/artifact/1YkSDNx7R8XVEyoGAhi553
+- **Squad Surge** (`squad-game/`): a squad runner shooter. Live: https://claude.ai/artifact/8ik6JLBA8QhFJZcgQFFbLe
 
-The last game, **Span Sketch**, is a bridge-drawing physics puzzle in `bridge-game/`. `bridge-game/CLAUDE.md` documents it, and `bridge-game/tools/playtest.js` is a headless Playwright playtester. Read both before you start; reuse the approach, not the game. Its live link is https://claude.ai/artifact/1YkSDNx7R8XVEyoGAhi553. Future updates to Span Sketch should publish to that same link.
+Put the new game in its own directory and add it to `GAMES.md`.
 
 How I like to work:
 - **Platform:** a phone held upright, played with a finger. It must fit a 360px-wide screen without sideways scrolling. Put the controls in a footer bar. Don't put buttons in pop-ups when the footer already has them.
@@ -24,4 +24,4 @@ How I like to work:
 - **Saving progress:** use localStorage for best scores and saved replays, wrapped in try/catch. Features I liked: replaying the last attempt, and a button that replays my best run on the current level.
 - **Updates:** keep replies short and say what you tested. When I report a bug, find the root cause and check whether the same bug affects other levels or parts of the game.
 
-Do Task 1 first and confirm it. Then ask me anything about the new game that's genuinely unclear, build a playable first version with a few levels, publish it, and give me the link.
+Ask me anything about the new game that's genuinely unclear. Then build a playable first version with a few levels, publish it, and give me the link.

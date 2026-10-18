@@ -3,7 +3,7 @@
 A portrait-phone physics puzzle. The player draws a bridge with a finger. On lift, gravity turns on, the bridge drops as one rigid piece, and a car drives across. 100 spans ("levels").
 
 - **Live page:** https://claude.ai/artifact/1YkSDNx7R8XVEyoGAhi553 (published from `index.html`)
-- **Repo:** `wawoodwa/dev-website-games`, directory `bridge-game/`. Moved here from `wawoodwa/wawoodwa`, the GitHub profile repo, with full history.
+- **Repo:** `wawoodwa/wawoodwa` (the owner's GitHub profile repo), directory `bridge-game/`. A later move to its own repo, `dev-website-games`, is planned.
 - **Owner preferences:** designed for a phone held upright. The owner tests on their phone and gives short, direct feedback. Make the change, verify it, publish, commit and push.
 
 ## Files
