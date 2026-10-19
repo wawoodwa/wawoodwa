@@ -156,7 +156,7 @@ footer .grow { flex: 1; }
 (() => {
 // World: the track is W units wide; z is distance forward along the track. Fixed 60 Hz tick, so replays are exact.
 const W = 360, MID = 180, STEP = 1000 / 60, DT = 1 / 60;
-const SPEED = 70;            // squad forward speed, units/s
+const SPEED = 70;            // default squad forward speed, units/s; a level can set its own `speed`
 const MOVE = 9;              // max sideways squad move per tick
 const SHOT_V = 520, RANGE = 600;   // reaches past the top of a portrait phone screen (~480-560 units visible ahead)
 const MAXN = 150, SHOOTERS = 36;   // above SHOOTERS soldiers, shots carry extra damage instead of extra bullets
@@ -206,6 +206,16 @@ const LEVELS = [
       g(250, '+4', 'shotgun'), w(500, 24, 'runner'), g(850, 'x2', '-5'), w(1100, 30, 'grunt'),
       g(1400, '/2', '+12'), w(1650, 30, 'runner'), w(1900, 2, 'brute', 120, 240), g(2200, '+10', 'x2'),
       w(2450, 36, 'grunt'), g(2750, '-12', '+8'), w(2950, 30, 'runner') ] },
+  { name: 'Gate Sprint', speed: 100, start: 6, weapon: 'pistol', len: 3000, boss: 700, two: 17, three: 27, rows: [
+      g(200, '+3', '-2'), w(285, 8, 'grunt'), g(370, '+2', 'x2'), w(455, 11, 'grunt'), g(540, '-3', '+4'), w(625, 14, 'grunt'), g(710, 'x2', '+5'), w(795, 17, 'grunt'), g(880, '/2', '+6'), w(965, 20, 'grunt'), g(1050, '+4', '-4'), w(1135, 23, 'grunt'), g(1220, 'x2', '-5'), w(1305, 26, 'grunt'), g(1390, '+6', '/2'), w(1475, 29, 'grunt'), g(1560, '+5', 'x2'), w(1645, 32, 'grunt'), g(1730, '-6', '+8'), w(1815, 35, 'grunt'), g(1900, 'x2', '+3'), w(1985, 38, 'grunt'), g(2070, '+8', '-8'), w(2155, 40, 'grunt'), g(2240, '+10', '/2'), w(2325, 40, 'grunt'), g(2410, 'x2', '-10'), w(2495, 40, 'grunt'), g(2580, '+6', '+2'), w(2665, 40, 'grunt'), g(2750, '-8', '+10'), w(2835, 40, 'grunt') ] },
+  { name: 'Double Lanes', speed: 110, start: 5, weapon: 'rifle', len: 3200, boss: 3600, two: 75, three: 120, rows: [
+      g(200, 'x2', '+3'), w(280, 12, 'grunt'), g(360, '/2', 'x2'), w(440, 13, 'runner'), g(520, '+4', 'x2'), w(600, 18, 'grunt'), g(680, 'x2', '-4'), w(760, 19, 'runner'), g(840, '-5', 'x2'), w(920, 24, 'grunt'), g(1000, 'x2', '/2'), w(1080, 25, 'runner'), g(1160, '+6', 'x2'), w(1240, 30, 'grunt'), g(1320, '/2', '+8'), w(1400, 31, 'runner'), g(1480, 'x2', '-8'), w(1560, 36, 'grunt'), g(1640, '+10', '/2'), w(1720, 37, 'runner'), g(1800, 'x2', '+5'), w(1880, 42, 'grunt'), g(1960, '-10', 'x2'), w(2040, 40, 'runner'), g(2120, '/2', '+12'), w(2200, 44, 'grunt'), g(2280, 'x2', '-12'), w(2360, 40, 'runner'), g(2440, '+8', 'x2'), w(2520, 44, 'grunt'), g(2600, '/2', '+10'), w(2680, 40, 'runner'), g(2760, 'x2', '-6'), w(2840, 44, 'grunt'), g(2920, '+12', '/2'), w(3000, 40, 'runner') ] },
+  { name: 'Runner Rapids', speed: 120, start: 8, weapon: 'pistol', len: 3400, boss: 4200, two: 75, three: 120, rows: [
+      g(200, 'rifle', '+5'), w(285, 12, 'runner'), g(370, '+4', '-3'), w(455, 15, 'runner'), g(540, 'x2', '+6'), w(625, 18, 'runner'), g(710, '-5', '+5'), w(795, 21, 'runner'), g(880, '+8', '/2'), w(965, 24, 'runner'), g(1050, 'x2', '-6'), w(1135, 27, 'runner'), g(1220, '-8', '+10'), w(1305, 30, 'runner'), g(1390, '+6', 'x2'), w(1475, 33, 'runner'), g(1560, '/2', '+12'), w(1645, 36, 'runner'), g(1730, 'x2', '-10'), w(1815, 39, 'runner'), g(1900, '+10', '-10'), w(1985, 42, 'runner'), g(2070, 'x2', '+8'), w(2155, 44, 'runner'), g(2240, '-12', '+12'), w(2325, 44, 'runner'), g(2410, '+10', '/2'), w(2495, 44, 'runner'), g(2580, 'x2', '-8'), w(2665, 44, 'runner'), g(2750, '+6', '+12'), w(2835, 44, 'runner'), g(2920, '-10', 'x2'), w(3005, 44, 'runner'), g(3090, '+12', '-12'), w(3175, 44, 'runner') ] },
+  { name: 'Shotgun Express', speed: 130, start: 10, weapon: 'shotgun', len: 3600, boss: 3000, two: 75, three: 120, rows: [
+      g(200, '+5', 'x2'), w(282, 18, 'grunt'), g(365, 'x2', '-4'), w(447, 17, 'runner'), g(530, '+6', '-6'), w(612, 20, 'runner'), g(695, '-8', 'x2'), w(777, 27, 'grunt'), g(860, '+10', '/2'), w(942, 26, 'runner'), g(1025, 'x2', '+6'), w(1107, 29, 'runner'), g(1190, '/2', '+12'), w(1272, 36, 'grunt'), g(1355, '+8', '-8'), w(1437, 35, 'runner'), g(1520, 'x2', '-10'), w(1602, 38, 'runner'), g(1685, '-12', '+10'), w(1767, 45, 'grunt'), g(1850, '+12', 'x2'), w(1932, 44, 'runner'), g(2015, '/2', '+14'), w(2097, 44, 'runner'), g(2180, 'x2', '-12'), w(2262, 48, 'grunt'), g(2345, '+10', '-10'), w(2427, 44, 'runner'), g(2510, '-14', '+14'), w(2592, 44, 'runner'), g(2675, 'x2', '/2'), w(2757, 48, 'grunt'), g(2840, '+12', '-12'), w(2922, 44, 'runner'), g(3005, '/2', 'x2'), w(3087, 44, 'runner'), g(3170, '+14', '-14'), w(3252, 48, 'grunt'), g(3335, 'x2', '+10'), w(3417, 44, 'runner') ] },
+  { name: 'Minigun Dash', speed: 140, start: 12, weapon: 'rifle', len: 3800, boss: 7000, two: 75, three: 120, rows: [
+      g(200, '+6', 'x2'), w(280, 16, 'grunt'), g(360, 'minigun', '+8'), w(440, 17, 'runner'), g(520, '-6', 'x2'), w(600, 3, 'brute', 140, 220), g(680, '+10', '/2'), w(760, 23, 'runner'), g(840, 'x2', '-8'), w(920, 28, 'grunt'), g(1000, '/2', '+12'), w(1080, 3, 'brute', 140, 220), g(1160, '+10', '-10'), w(1240, 34, 'grunt'), g(1320, 'x2', '+8'), w(1400, 35, 'runner'), g(1480, '-12', 'x2'), w(1560, 3, 'brute', 140, 220), g(1640, '+14', '/2'), w(1720, 41, 'runner'), g(1800, 'x2', '-14'), w(1880, 46, 'grunt'), g(1960, '+12', '-12'), w(2040, 3, 'brute', 140, 220), g(2120, '/2', 'x2'), w(2200, 48, 'grunt'), g(2280, '+16', '-16'), w(2360, 44, 'runner'), g(2440, 'x2', '+10'), w(2520, 3, 'brute', 140, 220), g(2600, '-14', '+14'), w(2680, 44, 'runner'), g(2760, '/2', '+16'), w(2840, 48, 'grunt'), g(2920, 'x2', '-12'), w(3000, 3, 'brute', 140, 220), g(3080, '+14', '/2'), w(3160, 48, 'grunt'), g(3240, '-16', 'x2'), w(3320, 44, 'runner'), g(3400, '+12', '+6'), w(3480, 3, 'brute', 140, 220), g(3560, 'x2', '-10'), w(3640, 44, 'runner') ] },
 ];
 
 // Formation offsets (sunflower spiral), soldier i at OFF[i] from the squad centre.
@@ -247,7 +257,7 @@ function tick(s, tx) {
   s.t++;
   let R = radius(s.n), lo = Math.min(R, MID);
   s.x = clamp(s.x + clamp(clamp(tx, lo, W - lo) - s.x, -MOVE, MOVE), lo, W - lo);
-  if (s.z < lv.len) s.z = Math.min(lv.len, s.z + SPEED * DT);
+  if (s.z < lv.len) s.z = Math.min(lv.len, s.z + (lv.speed || SPEED) * DT);
 
   for (const gt of s.gates) if (!gt.used && s.z >= gt.z) {
     const side = s.x < MID ? 'l' : 'r', op = gt[side];

@@ -34,6 +34,7 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 - `g(z, left, right)`: gate pair; a side can be `null` (open).
 - `w(z, count, type, x0 = 40, x1 = 320)`: block of foes.
 - `boss`: boss hp. `two` / `three`: soldiers needed for 2 and 3 stars, plain numbers the owner tunes. Initial values are 50% / 80% of the bot's result.
+- `speed` (optional): forward scroll speed in units/s for that level; default `SPEED = 70`. Levels 6–10 run at 100–140 with a gate pair every 160–170 units.
 
 ### Rules
 1. Name levels after what's in them, short (about 16 characters or fewer).
