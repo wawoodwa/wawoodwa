@@ -20,6 +20,7 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 - Firing: up to `SHOOTERS = 36` soldiers fire; with more soldiers each shot carries `n / 36` damage. Weapons in `WEAPONS` (fire interval in ticks, pellets).
 - Foes in `FOES`: hp, forward speed, sideways chase speed, `bite` (soldiers lost on contact), radius. They wake within `WAKE` units.
 - Loss: squad reaches 0, the boss reaches the squad, or 4 minutes pass.
+- **Ending (visual only):** when a level ends, no new shots are fired and bullets in flight finish; after a win the camera keeps scrolling at the level's speed so the squad slides off the bottom (`outro`, capped at `OUTRO_MAX` ms). Then the result card shows.
 - **View:** every screen shows the same slice of the track, `W` wide by `VIEW_H = 600` deep (`VIEW_BACK = 120` of it behind the squad), scaled with `sc = min(cw / W, ch / VIEW_H)` and centred with offset `ox`. Tablets and landscape screens get plain shoulders at the sides, so gameplay matches the phone. Everything drawn on the canvas, including text and line widths, scales with `sc`.
 - Bullets fly `RANGE = 600` units, past the top of a portrait phone screen. It is a constant, not screen-based, so replays match on every device.
 - **Saved runs are tied to the simulation.** Bump `SIM_V` on any change to `tick()`, constants or levels' contents; runs saved under another version are dropped.
