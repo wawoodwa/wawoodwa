@@ -19,7 +19,7 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 
 1. **No caps on soldiers.** The count is unbounded; ×2 chains can reach thousands. Limit only what's drawn, never the real count.
 2. **Don't draw every soldier.** At most `SPREAD = 300` figures, as a full, even formation. Never sample a bigger spiral by stride: it makes pinwheel arms.
-3. **Faster, gate-dense levels** are what the owner asked for after the first 5: levels 6–10 scroll at 100–140 with a gate pair every 160–170 units.
+3. **Faster, gate-dense levels** are what the owner asked for after the first 5: levels 6–10 scroll at 100–140 with a gate pair every 160–170 units; levels 11–20 at 142–160 with a gate pair every 180 down to 152 units.
 4. **Clean ending:** when a level ends, bullets finish their flight and, after a win, the squad scrolls off the bottom at the level's speed before the card shows.
 5. **Bullets are colored by weapon**, so the current gun is readable at a glance.
 6. **Level names** describe what's in the level, about 16 characters or fewer, and are never generic.
@@ -40,6 +40,16 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 | 8 | Runner Rapids | 120 | 8 | pistol | 4200 | 210 | 336 | 420 |
 | 9 | Shotgun Express | 130 | 10 | shotgun | 3000 | 934 | 1494 | 1868 |
 | 10 | Minigun Dash | 140 | 12 | rifle | 7000 | 2208 | 3533 | 4416 |
+| 11 | Brute Buckshot | 142 | 12 | shotgun | 20000 | 2458 | 3933 | 4916 |
+| 12 | Pistol Gamble | 144 | 10 | pistol | 17000 | 1714 | 2742 | 3428 |
+| 13 | Minigun Stampede | 146 | 14 | minigun | 17000 | 1713 | 2741 | 3426 |
+| 14 | Triple or Plus | 148 | 6 | rifle | 8000 | 1602 | 2562 | 3203 |
+| 15 | Brute Gauntlet | 150 | 10 | rifle | 1500 | 145 | 231 | 289 |
+| 16 | Gun Swap Relay | 152 | 12 | pistol | 8000 | 804 | 1286 | 1608 |
+| 17 | Divide or Drop | 154 | 30 | rifle | 25000 | 2498 | 3997 | 4996 |
+| 18 | Three-Foe Horde | 156 | 14 | shotgun | 22000 | 2078 | 3325 | 4156 |
+| 19 | Downgrade Dare | 158 | 12 | minigun | 15000 | 4948 | 7917 | 9896 |
+| 20 | Minigun Finale | 160 | 12 | minigun | 240000 | 24261 | 38818 | 48522 |
 
 ## Simulation
 
@@ -75,11 +85,14 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 4. Re-run the playtester on the new levels and on levels 1–5 (as a regression check), with `--shots`, and look at the screenshots: gates, crowd, boss, end and dark mode.
 5. Republish to the same link, commit and push on a branch.
 
+Levels 11–20 have trade-off gates: ×3 next to a big +N, weapon gates next to ×2, downgrades (pistol) next to ×2/×3, and "lesser evil" pairs (÷2 next to −N) where the better side depends on the squad size. Their bosses were set to about 10% of the damage the bot deals before an unkillable boss reaches it (patch the bot's score to drop the `t.boss.hp` term when you measure this, or a huge boss hp makes it prefer dying).
+
 ### Pitfalls from tuning levels 6–10
 - **The bot can skip a weapon gate.** On Shotgun Express it took +5 over the shotgun, got ground down by runners, and lost to the boss with the same survivors whatever the boss hp. `tools/trace.js` showed it. If a level is named for a weapon, start with that weapon.
 - **Faster scrolling means less time to shoot the boss.** A pistol-only level at speed 100 needed the boss cut to 700 hp.
 - **×2 chains snowball.** With no cap, a near-perfect bot multiplies to thousands, so the 3★ thresholds on levels 7–10 are steep. One missed ×2 halves the result. Tell the owner the numbers; they may want them lower.
 - **The playtester's device check clicks the Best chip** of the first selected level, so it crashes with a click timeout if that level's bot lost. Read that crash as "the first level lost".
+- **Lesser-evil gates need growth around them.** Divide or Drop first alternated one good and one bad pair and the bot was wiped; two good pairs per bad one works.
 - **Slow bot runs:** the bot clones the whole state for lookahead, so levels that end with thousands of soldiers take about 2 minutes per bot run. Give commands a long timeout.
 
 ## UI
