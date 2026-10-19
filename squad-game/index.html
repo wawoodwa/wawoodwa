@@ -161,8 +161,8 @@ const MOVE = 9;              // max sideways squad move per tick
 const SHOT_V = 520, RANGE = 600;   // reaches past the top of a portrait phone screen (~480-560 units visible ahead)
 const SHOOTERS = 36;         // above SHOOTERS soldiers, shots carry extra damage instead of extra bullets
 // The squad size has no cap. The crowd spreads out until SPREAD soldiers, then packs tighter so it stays
-// narrower than the road. Only DRAW_MAX figures are drawn, spread across the crowd; the count label shows the real number.
-const SPREAD = 300, DRAW_MAX = 120;
+// narrower than the road. Past SPREAD the drawing keeps the SPREAD-soldier formation; the count label shows the real number.
+const SPREAD = 300;
 const WAKE = 620;            // foes start walking when this close
 // Every screen shows the same phone-shaped slice of the track: W wide, VIEW_H deep (VIEW_BACK of it behind the squad),
 // scaled to fit and centred. Wider screens (tablets) get plain shoulders at the sides.
@@ -523,8 +523,9 @@ function render(now) {
   const sr = 4.5 * sc;
   ctx.fillStyle = col.squad; ctx.strokeStyle = col['squad-dark']; ctx.lineWidth = 1.2 * sc;
   ctx.beginPath();
-  const drawN = Math.min(s.n, DRAW_MAX), pos = [];
-  for (let i = 0; i < drawN; i++) { const o = off(Math.floor(i * s.n / drawN), s.n); pos.push([X(s.x + o[0]), Y(s.z + o[1])]); }
+  // Draw a full, even formation of up to SPREAD figures (sampling a bigger spiral by stride makes pinwheel arms).
+  const drawN = Math.min(s.n, SPREAD), pos = [];
+  for (let i = 0; i < drawN; i++) { const o = off(i, drawN); pos.push([X(s.x + o[0]), Y(s.z + o[1])]); }
   for (const [x, y] of pos) { ctx.moveTo(x + sr, y); ctx.arc(x, y, sr, 0, 7); }
   ctx.fill(); ctx.stroke();
   ctx.strokeStyle = col['squad-dark']; ctx.lineWidth = 1.6 * sc; ctx.beginPath();
