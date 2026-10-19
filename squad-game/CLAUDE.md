@@ -2,45 +2,85 @@
 
 A portrait-phone arcade shooter. A squad runs forward and fires automatically. The player drags left and right to steer it through paired gates (+N, −N, ×N, ÷N, or a weapon for the whole squad), around hordes of foes, and into a boss at the end. Stars count the soldiers alive when the boss falls.
 
-- **Live page:** https://claude.ai/artifact/8ik6JLBA8QhFJZcgQFFbLe (published from `index.html`). Republish updates to this same link.
-- **Owner preferences:** same as Span Sketch (see `../bridge-game/CLAUDE.md` and the repo `CLAUDE.md`).
+- **Live page:** https://claude.ai/artifact/8ik6JLBA8QhFJZcgQFFbLe (published from `index.html`; the page is private). Republish updates to this same link: pass `url` to the Artifact tool, and read the artifact first if this session didn't publish it.
+- **Repo:** `wawoodwa/wawoodwa` (the owner's GitHub profile repo), directory `squad-game/`. Never touch the repo's `README.md`; list games in `GAMES.md`.
+- **Owner preferences:** see the repo `CLAUDE.md`, `HANDOFF.md` and `../bridge-game/CLAUDE.md`. The ones specific to this game are under "Owner rules" below.
 
 ## Files
 
 | Path | What it is |
 |---|---|
 | `index.html` | The entire game: styles, markup, levels, simulation and rendering. Canvas + plain JS, no libraries. Like Span Sketch, it has no doctype/html/head/body; the artifact host adds them. |
-| `tools/playtest.js` | Headless Playwright playtester (bot + UI replay + drag check + screenshots). |
+| `tools/playtest.js` | Headless Playwright playtester: bot run per level, replay check, real-UI replay through the Best chip, drag and overflow checks on phone and iPad sizes, screenshots. |
+| `tools/trace.js` | Prints one bot run every 2 seconds (soldiers, weapon, boss hp, boss distance). Use it to find out why a level's bot loses. |
+| `HANDOFF.md` | Copy-paste prompt for a session that adds more levels. |
+
+## Owner rules for this game
+
+1. **No caps on soldiers.** The count is unbounded; ×2 chains can reach thousands. Limit only what's drawn, never the real count.
+2. **Don't draw every soldier.** At most `SPREAD = 300` figures, as a full, even formation. Never sample a bigger spiral by stride: it makes pinwheel arms.
+3. **Faster, gate-dense levels** are what the owner asked for after the first 5: levels 6–10 scroll at 100–140 with a gate pair every 160–170 units.
+4. **Clean ending:** when a level ends, bullets finish their flight and, after a win, the squad scrolls off the bottom at the level's speed before the card shows.
+5. **Bullets are colored by weapon**, so the current gun is readable at a glance.
+6. **Level names** describe what's in the level, about 16 characters or fewer, and are never generic.
+7. **Every level must be winnable with 3 stars.** Stars start at 50% (2 stars) and 80% (3 stars) of the bot's survivors, as plain numbers per level that the owner may tune.
+8. A 3-star win's card says "Great job!" with no hint to improve. The result card has no buttons.
+
+## Levels
+
+| # | Name | Speed | Start | Weapon | Boss hp | 2★ | 3★ | Bot's survivors |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Pistol Patrol | 70 | 3 | pistol | 260 | 10 | 16 | 19 |
+| 2 | Rifle Fork | 70 | 5 | pistol | 700 | 23 | 37 | 46 |
+| 3 | Divide Trap | 70 | 8 | rifle | 1100 | 38 | 62 | 78 |
+| 4 | Brute Column | 70 | 10 | rifle | 1600 | 25 | 40 | 50 |
+| 5 | Shotgun Swarm | 70 | 12 | pistol | 2200 | 40 | 64 | 80 |
+| 6 | Gate Sprint | 100 | 6 | pistol | 700 | 17 | 27 | 34 |
+| 7 | Double Lanes | 110 | 5 | rifle | 3600 | 126 | 201 | 251 |
+| 8 | Runner Rapids | 120 | 8 | pistol | 4200 | 210 | 336 | 420 |
+| 9 | Shotgun Express | 130 | 10 | shotgun | 3000 | 934 | 1494 | 1868 |
+| 10 | Minigun Dash | 140 | 12 | rifle | 7000 | 2208 | 3533 | 4416 |
 
 ## Simulation
 
 - Fixed 60 Hz tick (`tick(s, tx)`); `tx` is the steering target x, rounded to whole units. The state is plain data, so it can be `structuredClone`d. Replays are recorded inputs `[[tick, x], ...]` and reproduce runs exactly.
-- Track is `W = 360` units wide, `MID = 180` splits gate sides. The squad moves forward at `SPEED` until `len`, then holds while the boss walks in (`BOSS_WAKE` units before `len`).
-- Gates trigger when the squad centre passes their z; the side is the side of `MID` the centre is on. Squad size has **no cap** (the owner's rule: these games don't cap soldiers). The crowd spreads until `SPREAD = 300` soldiers, then packs tighter so it stays narrower than the road, and the drawing shows at most `SPREAD` figures as a full, even formation (display only, not part of the simulation; sampling a bigger spiral by stride makes pinwheel arms). The count label shows the real number.
-- Firing: up to `SHOOTERS = 36` soldiers fire; with more soldiers each shot carries `n / 36` damage. Weapons in `WEAPONS` (fire interval in ticks, pellets).
+- Track is `W = 360` units wide, and `MID = 180` splits the gate sides. The squad moves forward at the level's `speed` (default `SPEED = 70`) until `len`, then holds while the boss walks in (`BOSS_WAKE` units before `len`).
+- Gates trigger when the squad centre passes their z; the side is the side of `MID` the centre is on.
+- Squad size has **no cap**. The crowd spreads until `SPREAD = 300` soldiers, then packs tighter so it stays narrower than the road (`spacing`, `radius`). The drawing shows at most `SPREAD` figures as a full, even formation (`off(i, drawN)`); the count label shows the real number.
+- Firing: up to `SHOOTERS = 36` soldiers fire; with more soldiers each shot carries `n / 36` damage. Weapons in `WEAPONS` (fire interval in ticks, pellets): pistol 2 shots/s, rifle 5/s, shotgun 4 pellets every 24 ticks (about 10 pellets/s), minigun 12/s. `SHOT_COLOR` maps each weapon to a CSS color token.
 - Foes in `FOES`: hp, forward speed, sideways chase speed, `bite` (soldiers lost on contact), radius. They wake within `WAKE` units.
 - Loss: squad reaches 0, the boss reaches the squad, or 4 minutes pass.
-- **Ending (visual only):** when a level ends, no new shots are fired and bullets in flight finish; after a win the camera keeps scrolling at the level's speed so the squad slides off the bottom (`outro`, capped at `OUTRO_MAX` ms). Then the result card shows.
+- **Ending (visual only):** `finish()` records results immediately. Then `outro` runs: no new shots, bullets in flight finish, and after a win the camera (`cz` in `render`) keeps scrolling at the level's speed so the squad slides off the bottom. It's capped at `OUTRO_MAX` ms, and the card shows after it.
 - **View:** every screen shows the same slice of the track, `W` wide by `VIEW_H = 600` deep (`VIEW_BACK = 120` of it behind the squad), scaled with `sc = min(cw / W, ch / VIEW_H)` and centred with offset `ox`. Tablets and landscape screens get plain shoulders at the sides, so gameplay matches the phone. Everything drawn on the canvas, including text and line widths, scales with `sc`.
-- Bullets fly `RANGE = 600` units, past the top of a portrait phone screen. It is a constant, not screen-based, so replays match on every device.
-- **Saved runs are tied to the simulation.** Bump `SIM_V` on any change to `tick()`, constants or levels' contents; runs saved under another version are dropped.
+- Bullets fly `RANGE = 600` units, past the top of a portrait phone screen. It's a constant, not screen-based, so replays match on every device.
+- **Saved runs are tied to the simulation.** Bump `SIM_V` (currently 3) on any change to `tick()`, simulation constants or an existing level's contents; runs saved under another version are dropped. **Appending** new levels at the end doesn't need a bump, because runs are keyed by level index. Inserting or reordering levels does.
 - `window.__sim` exposes the simulation core for the playtester; `window.__speed` speeds up the real-time loop in tests.
 
 ## Level format (`LEVELS`)
 
 ```js
-{ name: 'Rifle Fork', start: 5, weapon: 'pistol', len: 2600, boss: 700, two: 23, three: 37, rows: [
-    g(250, 'rifle', '+4'), w(500, 12, 'grunt'), ... ] },
+{ name: 'Gate Sprint', speed: 100, start: 6, weapon: 'pistol', len: 3000, boss: 700, two: 17, three: 27, rows: [
+    g(200, '+3', '-2'), w(285, 8, 'grunt'), g(370, '+2', 'x2'), ... ] },
 ```
-- `g(z, left, right)`: gate pair; a side can be `null` (open).
-- `w(z, count, type, x0 = 40, x1 = 320)`: block of foes.
-- `boss`: boss hp. `two` / `three`: soldiers needed for 2 and 3 stars, plain numbers the owner tunes. Initial values are 50% / 80% of the bot's result.
-- `speed` (optional): forward scroll speed in units/s for that level; default `SPEED = 70`. Levels 6–10 run at 100–140 with a gate pair every 160–170 units.
+- `g(z, left, right)`: a gate pair; a side can be `'+N'`, `'-N'`, `'xN'`, `'/N'`, a weapon key (`'rifle'`, `'shotgun'`, `'minigun'`, `'pistol'`) or `null` (open).
+- `w(z, count, type, x0 = 40, x1 = 320)`: a block of foes (`'grunt'`, `'runner'`, `'brute'`), laid out in rows across x0..x1.
+- `speed` (optional): scroll speed in units/s; default 70.
+- `boss`: boss hp. `two` / `three`: soldiers needed for 2 and 3 stars.
 
-### Rules
-1. Name levels after what's in them, short (about 16 characters or fewer).
-2. Every level must be winnable with 3 stars: the bot's survivors must be at least `three`.
-3. A 3-star win's card says "Great job!" with no hint to improve.
+## Adding levels
+
+1. Append to `LEVELS` (don't insert or reorder; see `SIM_V` above). For many levels, generate the `rows` with a small script, using gate pairs every `gap` units and a foe block halfway between, then paste the output in.
+2. Start the bosses generous, run `node squad-game/tools/playtest.js <levels>`, and adjust until the bot wins each one.
+3. Set `two` / `three` to 50% / 80% of the bot's survivors.
+4. Re-run the playtester on the new levels and on levels 1–5 (as a regression check), with `--shots`, and look at the screenshots: gates, crowd, boss, end and dark mode.
+5. Republish to the same link, commit and push on a branch.
+
+### Pitfalls from tuning levels 6–10
+- **The bot can skip a weapon gate.** On Shotgun Express it took +5 over the shotgun, got ground down by runners, and lost to the boss with the same survivors whatever the boss hp. `tools/trace.js` showed it. If a level is named for a weapon, start with that weapon.
+- **Faster scrolling means less time to shoot the boss.** A pistol-only level at speed 100 needed the boss cut to 700 hp.
+- **×2 chains snowball.** With no cap, a near-perfect bot multiplies to thousands, so the 3★ thresholds on levels 7–10 are steep. One missed ×2 halves the result. Tell the owner the numbers; they may want them lower.
+- **The playtester's device check clicks the Best chip** of the first selected level, so it crashes with a click timeout if that level's bot lost. Read that crash as "the first level lost".
+- **Slow bot runs:** the bot clones the whole state for lookahead, so levels that end with thousands of soldiers take about 2 minutes per bot run. Give commands a long timeout.
 
 ## UI
 - Header: level number and current weapon, name, squad count, progress meter, Best chip (always present).
@@ -51,6 +91,7 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 
 ```bash
 node squad-game/tools/playtest.js                 # all levels
-node squad-game/tools/playtest.js 2,4-5 --shots /path/to/dir
+node squad-game/tools/playtest.js 6-10 --shots /path/to/dir
+node squad-game/tools/trace.js 9                  # one bot run, step by step
 ```
-Reports, per level: the bot's result, whether its inputs re-run identically, and the result card when the real UI replays the run through the Best chip. Also checks that a drag moves the squad and that the page doesn't overflow, on phone and iPad sizes (portrait and landscape), with a screenshot per device. After any change to the simulation, re-run all levels. Look at the screenshots (start, play, boss, end, dark mode) before publishing new content.
+`playtest.js` reports, per level: the bot's result, whether its inputs re-run identically, and the result card when the real UI replays the run through the Best chip. It also checks that a drag moves the squad and that the page doesn't overflow, on phone and iPad sizes (portrait and landscape), with a screenshot per device. After any change to the simulation, re-run all levels. Look at the screenshots (start, play, boss, end, dark mode) before publishing new content.
