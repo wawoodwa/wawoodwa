@@ -9,6 +9,7 @@
   --road: #e8ecf0; --road-mark: #cdd5dd; --edge: #b9c4cf; --shoulder: #d3dae1;
   --squad: #2f6fe0; --squad-dark: #173e8c; --foe: #d8432c; --foe-dark: #8a2412;
   --gate-good: #1c9a5a; --gate-bad: #d23b3b; --gold: #d99a00; --shot: #e89a00;
+  --shot-rifle: #0f9fb8; --shot-shotgun: #c8358f; --shot-minigun: #7346d4;
   --text: #17202a; --muted: #5a6878; --panel: #ffffff; --line: #c7d2dc;
   --good: #1c8547; --bad: #c22f2f;
   --display: "Bungee", "Arial Black", Impact, sans-serif;
@@ -20,6 +21,7 @@
     --road: #161c25; --road-mark: #262f3c; --edge: #34404f; --shoulder: #0e131a;
     --squad: #5f97ff; --squad-dark: #a9c6ff; --foe: #ff6a4f; --foe-dark: #ffb3a3;
     --gate-good: #3ccf86; --gate-bad: #ff6060; --gold: #ffc93d; --shot: #ffd25a;
+  --shot-rifle: #4fd8ff; --shot-shotgun: #ff7ad1; --shot-minigun: #b69bff;
     --text: #e9f1f9; --muted: #9db2ca; --panel: #1d2531; --line: #34404f;
     --good: #6fe0a0; --bad: #ff8080;
     color-scheme: dark;
@@ -29,6 +31,7 @@
   --road: #161c25; --road-mark: #262f3c; --edge: #34404f; --shoulder: #0e131a;
   --squad: #5f97ff; --squad-dark: #a9c6ff; --foe: #ff6a4f; --foe-dark: #ffb3a3;
   --gate-good: #3ccf86; --gate-bad: #ff6060; --gold: #ffc93d; --shot: #ffd25a;
+  --shot-rifle: #4fd8ff; --shot-shotgun: #ff7ad1; --shot-minigun: #b69bff;
   --text: #e9f1f9; --muted: #9db2ca; --panel: #1d2531; --line: #34404f;
   --good: #6fe0a0; --bad: #ff8080;
   color-scheme: dark;
@@ -153,10 +156,13 @@ footer .grow { flex: 1; }
 (() => {
 // World: the track is W units wide; z is distance forward along the track. Fixed 60 Hz tick, so replays are exact.
 const W = 360, MID = 180, STEP = 1000 / 60, DT = 1 / 60;
-const SPEED = 70;            // squad forward speed, units/s
+const SPEED = 70;            // default squad forward speed, units/s; a level can set its own `speed`
 const MOVE = 9;              // max sideways squad move per tick
 const SHOT_V = 520, RANGE = 600;   // reaches past the top of a portrait phone screen (~480-560 units visible ahead)
-const MAXN = 150, SHOOTERS = 36;   // above SHOOTERS soldiers, shots carry extra damage instead of extra bullets
+const SHOOTERS = 36;         // above SHOOTERS soldiers, shots carry extra damage instead of extra bullets
+// The squad size has no cap. The crowd spreads out until SPREAD soldiers, then packs tighter so it stays
+// narrower than the road. Only DRAW_MAX figures are drawn, spread across the crowd; the count label shows the real number.
+const SPREAD = 300, DRAW_MAX = 120;
 const WAKE = 620;            // foes start walking when this close
 // Every screen shows the same phone-shaped slice of the track: W wide, VIEW_H deep (VIEW_BACK of it behind the squad),
 // scaled to fit and centred. Wider screens (tablets) get plain shoulders at the sides.
@@ -169,6 +175,8 @@ const WEAPONS = {
   shotgun: { name: 'Shotgun', every: 24, dmg: 1, pellets: 4 },
   minigun: { name: 'Minigun', every: 5,  dmg: 1, pellets: 1 },
 };
+// CSS colour token for each weapon's bullets
+const SHOT_COLOR = { pistol: 'shot', rifle: 'shot-rifle', shotgun: 'shot-shotgun', minigun: 'shot-minigun' };
 // hp, forward speed v, sideways chase speed, soldiers lost on contact, radius
 const FOES = {
   grunt:  { hp: 3,  v: 38, side: 14, bite: 1, r: 8 },
@@ -201,19 +209,29 @@ const LEVELS = [
       g(250, '+4', 'shotgun'), w(500, 24, 'runner'), g(850, 'x2', '-5'), w(1100, 30, 'grunt'),
       g(1400, '/2', '+12'), w(1650, 30, 'runner'), w(1900, 2, 'brute', 120, 240), g(2200, '+10', 'x2'),
       w(2450, 36, 'grunt'), g(2750, '-12', '+8'), w(2950, 30, 'runner') ] },
+  { name: 'Gate Sprint', speed: 100, start: 6, weapon: 'pistol', len: 3000, boss: 700, two: 17, three: 27, rows: [
+      g(200, '+3', '-2'), w(285, 8, 'grunt'), g(370, '+2', 'x2'), w(455, 11, 'grunt'), g(540, '-3', '+4'), w(625, 14, 'grunt'), g(710, 'x2', '+5'), w(795, 17, 'grunt'), g(880, '/2', '+6'), w(965, 20, 'grunt'), g(1050, '+4', '-4'), w(1135, 23, 'grunt'), g(1220, 'x2', '-5'), w(1305, 26, 'grunt'), g(1390, '+6', '/2'), w(1475, 29, 'grunt'), g(1560, '+5', 'x2'), w(1645, 32, 'grunt'), g(1730, '-6', '+8'), w(1815, 35, 'grunt'), g(1900, 'x2', '+3'), w(1985, 38, 'grunt'), g(2070, '+8', '-8'), w(2155, 40, 'grunt'), g(2240, '+10', '/2'), w(2325, 40, 'grunt'), g(2410, 'x2', '-10'), w(2495, 40, 'grunt'), g(2580, '+6', '+2'), w(2665, 40, 'grunt'), g(2750, '-8', '+10'), w(2835, 40, 'grunt') ] },
+  { name: 'Double Lanes', speed: 110, start: 5, weapon: 'rifle', len: 3200, boss: 3600, two: 126, three: 201, rows: [
+      g(200, 'x2', '+3'), w(280, 12, 'grunt'), g(360, '/2', 'x2'), w(440, 13, 'runner'), g(520, '+4', 'x2'), w(600, 18, 'grunt'), g(680, 'x2', '-4'), w(760, 19, 'runner'), g(840, '-5', 'x2'), w(920, 24, 'grunt'), g(1000, 'x2', '/2'), w(1080, 25, 'runner'), g(1160, '+6', 'x2'), w(1240, 30, 'grunt'), g(1320, '/2', '+8'), w(1400, 31, 'runner'), g(1480, 'x2', '-8'), w(1560, 36, 'grunt'), g(1640, '+10', '/2'), w(1720, 37, 'runner'), g(1800, 'x2', '+5'), w(1880, 42, 'grunt'), g(1960, '-10', 'x2'), w(2040, 40, 'runner'), g(2120, '/2', '+12'), w(2200, 44, 'grunt'), g(2280, 'x2', '-12'), w(2360, 40, 'runner'), g(2440, '+8', 'x2'), w(2520, 44, 'grunt'), g(2600, '/2', '+10'), w(2680, 40, 'runner'), g(2760, 'x2', '-6'), w(2840, 44, 'grunt'), g(2920, '+12', '/2'), w(3000, 40, 'runner') ] },
+  { name: 'Runner Rapids', speed: 120, start: 8, weapon: 'pistol', len: 3400, boss: 4200, two: 210, three: 336, rows: [
+      g(200, 'rifle', '+5'), w(285, 12, 'runner'), g(370, '+4', '-3'), w(455, 15, 'runner'), g(540, 'x2', '+6'), w(625, 18, 'runner'), g(710, '-5', '+5'), w(795, 21, 'runner'), g(880, '+8', '/2'), w(965, 24, 'runner'), g(1050, 'x2', '-6'), w(1135, 27, 'runner'), g(1220, '-8', '+10'), w(1305, 30, 'runner'), g(1390, '+6', 'x2'), w(1475, 33, 'runner'), g(1560, '/2', '+12'), w(1645, 36, 'runner'), g(1730, 'x2', '-10'), w(1815, 39, 'runner'), g(1900, '+10', '-10'), w(1985, 42, 'runner'), g(2070, 'x2', '+8'), w(2155, 44, 'runner'), g(2240, '-12', '+12'), w(2325, 44, 'runner'), g(2410, '+10', '/2'), w(2495, 44, 'runner'), g(2580, 'x2', '-8'), w(2665, 44, 'runner'), g(2750, '+6', '+12'), w(2835, 44, 'runner'), g(2920, '-10', 'x2'), w(3005, 44, 'runner'), g(3090, '+12', '-12'), w(3175, 44, 'runner') ] },
+  { name: 'Shotgun Express', speed: 130, start: 10, weapon: 'shotgun', len: 3600, boss: 3000, two: 934, three: 1494, rows: [
+      g(200, '+5', 'x2'), w(282, 18, 'grunt'), g(365, 'x2', '-4'), w(447, 17, 'runner'), g(530, '+6', '-6'), w(612, 20, 'runner'), g(695, '-8', 'x2'), w(777, 27, 'grunt'), g(860, '+10', '/2'), w(942, 26, 'runner'), g(1025, 'x2', '+6'), w(1107, 29, 'runner'), g(1190, '/2', '+12'), w(1272, 36, 'grunt'), g(1355, '+8', '-8'), w(1437, 35, 'runner'), g(1520, 'x2', '-10'), w(1602, 38, 'runner'), g(1685, '-12', '+10'), w(1767, 45, 'grunt'), g(1850, '+12', 'x2'), w(1932, 44, 'runner'), g(2015, '/2', '+14'), w(2097, 44, 'runner'), g(2180, 'x2', '-12'), w(2262, 48, 'grunt'), g(2345, '+10', '-10'), w(2427, 44, 'runner'), g(2510, '-14', '+14'), w(2592, 44, 'runner'), g(2675, 'x2', '/2'), w(2757, 48, 'grunt'), g(2840, '+12', '-12'), w(2922, 44, 'runner'), g(3005, '/2', 'x2'), w(3087, 44, 'runner'), g(3170, '+14', '-14'), w(3252, 48, 'grunt'), g(3335, 'x2', '+10'), w(3417, 44, 'runner') ] },
+  { name: 'Minigun Dash', speed: 140, start: 12, weapon: 'rifle', len: 3800, boss: 7000, two: 2208, three: 3533, rows: [
+      g(200, '+6', 'x2'), w(280, 16, 'grunt'), g(360, 'minigun', '+8'), w(440, 17, 'runner'), g(520, '-6', 'x2'), w(600, 3, 'brute', 140, 220), g(680, '+10', '/2'), w(760, 23, 'runner'), g(840, 'x2', '-8'), w(920, 28, 'grunt'), g(1000, '/2', '+12'), w(1080, 3, 'brute', 140, 220), g(1160, '+10', '-10'), w(1240, 34, 'grunt'), g(1320, 'x2', '+8'), w(1400, 35, 'runner'), g(1480, '-12', 'x2'), w(1560, 3, 'brute', 140, 220), g(1640, '+14', '/2'), w(1720, 41, 'runner'), g(1800, 'x2', '-14'), w(1880, 46, 'grunt'), g(1960, '+12', '-12'), w(2040, 3, 'brute', 140, 220), g(2120, '/2', 'x2'), w(2200, 48, 'grunt'), g(2280, '+16', '-16'), w(2360, 44, 'runner'), g(2440, 'x2', '+10'), w(2520, 3, 'brute', 140, 220), g(2600, '-14', '+14'), w(2680, 44, 'runner'), g(2760, '/2', '+16'), w(2840, 48, 'grunt'), g(2920, 'x2', '-12'), w(3000, 3, 'brute', 140, 220), g(3080, '+14', '/2'), w(3160, 48, 'grunt'), g(3240, '-16', 'x2'), w(3320, 44, 'runner'), g(3400, '+12', '+6'), w(3480, 3, 'brute', 140, 220), g(3560, 'x2', '-10'), w(3640, 44, 'runner') ] },
 ];
 
-// Formation offsets (sunflower spiral), soldier i at OFF[i] from the squad centre.
-const OFF = [];
-for (let i = 0; i < MAXN; i++) { const r = 6.4 * Math.sqrt(i), a = i * 2.399963; OFF.push([r * Math.cos(a), r * Math.sin(a)]); }
-const radius = n => 6.4 * Math.sqrt(Math.max(n, 1)) + 5;
+// Formation: sunflower spiral; soldier i of n sits at off(i, n) from the squad centre.
+const spacing = n => 6.4 * Math.min(1, Math.sqrt(SPREAD / Math.max(n, 1)));
+function off(i, n) { const r = spacing(n) * Math.sqrt(i), a = i * 2.399963; return [r * Math.cos(a), r * Math.sin(a)]; }
+const radius = n => 6.4 * Math.sqrt(Math.min(Math.max(n, 1), SPREAD)) + 5;
 const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
 
 function applyOp(s, op) {
   if (WEAPONS[op]) { s.wpn = op; return; }
   const v = +op.slice(1), c = op[0];
   s.n = c === '+' ? s.n + v : c === '-' ? s.n - v : c === 'x' ? s.n * v : Math.floor(s.n / v);
-  s.n = clamp(s.n, 0, MAXN);
+  s.n = Math.max(0, s.n);
 }
 const opGood = op => !!WEAPONS[op] || op[0] === '+' || op[0] === 'x';
 const opLabel = op => WEAPONS[op] ? WEAPONS[op].name : ({ '+': '+', '-': '−', 'x': '×', '/': '÷' })[op[0]] + op.slice(1);
@@ -242,7 +260,7 @@ function tick(s, tx) {
   s.t++;
   let R = radius(s.n), lo = Math.min(R, MID);
   s.x = clamp(s.x + clamp(clamp(tx, lo, W - lo) - s.x, -MOVE, MOVE), lo, W - lo);
-  if (s.z < lv.len) s.z = Math.min(lv.len, s.z + SPEED * DT);
+  if (s.z < lv.len) s.z = Math.min(lv.len, s.z + (lv.speed || SPEED) * DT);
 
   for (const gt of s.gates) if (!gt.used && s.z >= gt.z) {
     const side = s.x < MID ? 'l' : 'r', op = gt[side];
@@ -254,9 +272,9 @@ function tick(s, tx) {
   // Fire: up to SHOOTERS soldiers shoot, staggered; extra soldiers add damage per shot.
   const wp = WEAPONS[s.wpn], S = Math.min(s.n, SHOOTERS), d = S ? s.n / S * wp.dmg : 0;
   for (let j = 0; j < S; j++) if ((s.t + j * 7) % wp.every === 0) {
-    const o = OFF[Math.floor(j * s.n / S)];
+    const o = off(Math.floor(j * s.n / S), s.n);
     for (let p = 0; p < wp.pellets; p++)
-      s.shots.push({ x: s.x + o[0], z: s.z + o[1] + 6, vx: (p - (wp.pellets - 1) / 2) * 60, d, life: RANGE });
+      s.shots.push({ x: s.x + o[0], z: s.z + o[1] + 6, vx: (p - (wp.pellets - 1) / 2) * 60, d, life: RANGE, w: s.wpn });
   }
 
   const b = s.boss, adv = SHOT_V * DT;
@@ -314,7 +332,7 @@ const $ = id => document.getElementById(id);
 let best = {}, runs = {};
 try { best = JSON.parse(localStorage.getItem('squad-surge-best') || '{}') || {}; } catch (e) { best = {}; }
 // Saved runs are input recordings, valid only for the simulation they were recorded on: bump SIM_V on any change to tick().
-const SIM_V = 2, RUNS_KEY = 'squad-surge-runs-v' + SIM_V;
+const SIM_V = 3, RUNS_KEY = 'squad-surge-runs-v' + SIM_V;
 try { runs = JSON.parse(localStorage.getItem(RUNS_KEY) || '{}') || {}; localStorage.removeItem('squad-surge-runs'); } catch (e) { runs = {}; }
 function saveBest() { try { localStorage.setItem('squad-surge-best', JSON.stringify(best)); } catch (e) {} }
 function saveRuns() { try { localStorage.setItem(RUNS_KEY, JSON.stringify(runs)); } catch (e) {} }
@@ -329,7 +347,7 @@ let cw = 0, ch = 0, dpr = 1, sc = 1, ox = 0, col = {};
 
 function readColors() {
   const cs = getComputedStyle(document.documentElement);
-  for (const k of ['road', 'road-mark', 'edge', 'shoulder', 'squad', 'squad-dark', 'foe', 'foe-dark', 'gate-good', 'gate-bad', 'gold', 'shot', 'text', 'panel'])
+  for (const k of ['road', 'road-mark', 'edge', 'shoulder', 'squad', 'squad-dark', 'foe', 'foe-dark', 'gate-good', 'gate-bad', 'gold', 'shot', 'shot-rifle', 'shot-shotgun', 'shot-minigun', 'text', 'panel'])
     col[k] = cs.getPropertyValue('--' + k).trim();
 }
 function resize() {
@@ -494,18 +512,23 @@ function render(now) {
     ctx.fillStyle = col.text; ctx.font = `600 ${Math.round(12 * sc)}px "IBM Plex Mono", monospace`;
     ctx.fillText('BOSS ' + Math.ceil(b.hp), x, y - r - 24 * sc);
   }
-  // Shots
-  ctx.strokeStyle = col.shot; ctx.lineWidth = 2 * sc; ctx.beginPath();
-  for (const sh of s.shots) { const x = X(sh.x), y = Y(sh.z); ctx.moveTo(x, y); ctx.lineTo(x - sh.vx * 0.015 * sc, y + 8 * sc); }
-  ctx.stroke();
+  // Shots, coloured by the weapon that fired them
+  ctx.lineWidth = 2 * sc;
+  for (const w in WEAPONS) {
+    ctx.strokeStyle = col[SHOT_COLOR[w]]; ctx.beginPath();
+    for (const sh of s.shots) if (sh.w === w) { const x = X(sh.x), y = Y(sh.z); ctx.moveTo(x, y); ctx.lineTo(x - sh.vx * 0.015 * sc, y + 8 * sc); }
+    ctx.stroke();
+  }
   // Squad
   const sr = 4.5 * sc;
   ctx.fillStyle = col.squad; ctx.strokeStyle = col['squad-dark']; ctx.lineWidth = 1.2 * sc;
   ctx.beginPath();
-  for (let i = 0; i < s.n; i++) { const x = X(s.x + OFF[i][0]), y = Y(s.z + OFF[i][1]); ctx.moveTo(x + sr, y); ctx.arc(x, y, sr, 0, 7); }
+  const drawN = Math.min(s.n, DRAW_MAX), pos = [];
+  for (let i = 0; i < drawN; i++) { const o = off(Math.floor(i * s.n / drawN), s.n); pos.push([X(s.x + o[0]), Y(s.z + o[1])]); }
+  for (const [x, y] of pos) { ctx.moveTo(x + sr, y); ctx.arc(x, y, sr, 0, 7); }
   ctx.fill(); ctx.stroke();
   ctx.strokeStyle = col['squad-dark']; ctx.lineWidth = 1.6 * sc; ctx.beginPath();
-  for (let i = 0; i < s.n; i++) { const x = X(s.x + OFF[i][0]) + sr * 0.5, y = Y(s.z + OFF[i][1]); ctx.moveTo(x, y); ctx.lineTo(x, y - sr * 1.6); }
+  for (const [x0, y] of pos) { const x = x0 + sr * 0.5; ctx.moveTo(x, y); ctx.lineTo(x, y - sr * 1.6); }
   ctx.stroke();
   if (s.n > 0) {
     const R = radius(s.n), x = X(s.x), y = Y(s.z - R) + 14 * sc;

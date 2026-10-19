@@ -16,7 +16,7 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 
 - Fixed 60 Hz tick (`tick(s, tx)`); `tx` is the steering target x, rounded to whole units. The state is plain data, so it can be `structuredClone`d. Replays are recorded inputs `[[tick, x], ...]` and reproduce runs exactly.
 - Track is `W = 360` units wide, `MID = 180` splits gate sides. The squad moves forward at `SPEED` until `len`, then holds while the boss walks in (`BOSS_WAKE` units before `len`).
-- Gates trigger when the squad centre passes their z; the side is the side of `MID` the centre is on. Squad size is capped at `MAXN = 150`.
+- Gates trigger when the squad centre passes their z; the side is the side of `MID` the centre is on. Squad size has **no cap** (the owner's rule: these games don't cap soldiers). The crowd spreads until `SPREAD = 300` soldiers, then packs tighter so it stays narrower than the road, and only `DRAW_MAX = 120` figures are drawn, spread across the crowd (display only, not part of the simulation); the count label shows the real number.
 - Firing: up to `SHOOTERS = 36` soldiers fire; with more soldiers each shot carries `n / 36` damage. Weapons in `WEAPONS` (fire interval in ticks, pellets).
 - Foes in `FOES`: hp, forward speed, sideways chase speed, `bite` (soldiers lost on contact), radius. They wake within `WAKE` units.
 - Loss: squad reaches 0, the boss reaches the squad, or 4 minutes pass.
@@ -34,6 +34,7 @@ A portrait-phone arcade shooter. A squad runs forward and fires automatically. T
 - `g(z, left, right)`: gate pair; a side can be `null` (open).
 - `w(z, count, type, x0 = 40, x1 = 320)`: block of foes.
 - `boss`: boss hp. `two` / `three`: soldiers needed for 2 and 3 stars, plain numbers the owner tunes. Initial values are 50% / 80% of the bot's result.
+- `speed` (optional): forward scroll speed in units/s for that level; default `SPEED = 70`. Levels 6–10 run at 100–140 with a gate pair every 160–170 units.
 
 ### Rules
 1. Name levels after what's in them, short (about 16 characters or fewer).
