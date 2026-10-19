@@ -161,8 +161,8 @@ const MOVE = 9;              // max sideways squad move per tick
 const SHOT_V = 520, RANGE = 600;   // reaches past the top of a portrait phone screen (~480-560 units visible ahead)
 const SHOOTERS = 36;         // above SHOOTERS soldiers, shots carry extra damage instead of extra bullets
 // The squad size has no cap. The crowd spreads out until SPREAD soldiers, then packs tighter so it stays
-// narrower than the road. Only DRAW_MAX figures are drawn, spread across the crowd; the count label shows the real number.
-const SPREAD = 300, DRAW_MAX = 120;
+// narrower than the road. Past SPREAD the drawing keeps the SPREAD-soldier formation; the count label shows the real number.
+const SPREAD = 300;
 const WAKE = 620;            // foes start walking when this close
 // Every screen shows the same phone-shaped slice of the track: W wide, VIEW_H deep (VIEW_BACK of it behind the squad),
 // scaled to fit and centred. Wider screens (tablets) get plain shoulders at the sides.
@@ -342,6 +342,10 @@ try { startLevel = clamp(+localStorage.getItem('squad-surge-level') || 0, 0, LEV
 // ---- Game state ----
 let cur, mode = 'ready', rec = [], lastTx = null, input = MID, drag = null;
 let replay = null, ri = 0, rtx = MID, lastRun = null, acc = 0, last = 0, cardTimer = 0, fx = [];
+// End-of-level outro (visual only): bullets in flight finish; after a win the camera keeps scrolling so the squad
+// slides off the bottom of the screen. The result card shows when it's done.
+let outro = null;
+const OUTRO_MAX = 6000;
 const cv = $('c'), ctx = cv.getContext('2d');
 let cw = 0, ch = 0, dpr = 1, sc = 1, ox = 0, col = {};
 
@@ -359,7 +363,7 @@ function resize() {
 
 function load(li) {
   li = (li + LEVELS.length) % LEVELS.length;
-  clearTimeout(cardTimer);
+  clearTimeout(cardTimer); outro = null;
   cur = create(li); mode = 'ready'; rec = []; lastTx = null; input = MID; drag = null; acc = 0; fx = [];
   try { localStorage.setItem('squad-surge-level', li); } catch (e) {}
   const lv = LEVELS[li];
@@ -371,7 +375,7 @@ function load(li) {
 }
 function startReplay(inputs, label) {
   const li = cur.li;
-  clearTimeout(cardTimer);
+  clearTimeout(cardTimer); outro = null;
   cur = create(li); mode = 'replay'; replay = inputs; ri = 0; rtx = MID; acc = 0; fx = [];
   $('card').hidden = true; $('sheet').hidden = true;
   showHint(label, 2000);
@@ -420,7 +424,7 @@ function finish() {
     if (won && (!runs[li] || s.n > runs[li].n)) { runs[li] = { n: s.n, in: rec }; saveRuns(); updateBestBtn(); }
     if (stars > (best[li] || 0)) { best[li] = stars; saveBest(); }
   }
-  cardTimer = setTimeout(() => {
+  outro = { cam: s.z, t: 0, scroll: won ? (lv.speed || SPEED) : 0, done: () => {
     showHint('');
     $('cardTitle').textContent = !won ? (s.over.why === 'boss' ? 'Boss broke through' : 'Squad wiped out')
       : stars === 3 ? 'Great job!' : 'Boss down';
@@ -432,7 +436,18 @@ function finish() {
       ? (s.over.why === 'boss' ? 'Grow the squad or grab better guns before the boss arrives.' : 'Pick the plus gates and steer around the horde.')
       : stars === 3 ? made : `${made} Finish with ${lv.three}+ for 3 stars.`;
     $('card').hidden = false;
-  }, won ? 700 : 500);
+  } };
+}
+function stepOutro(dt) {
+  const s = cur, o = outro, k = dt / 1000;
+  if (o.finished) return;   // keep the final camera position behind the card
+  o.t += dt; o.cam += o.scroll * k;
+  for (const sh of s.shots) { sh.z += SHOT_V * k; sh.x += sh.vx * k; sh.life -= SHOT_V * k; }
+  s.shots = s.shots.filter(sh => sh.life > 0 && sh.x > -10 && sh.x < W + 10);
+  // The squad is off screen once its front edge passes below the bottom of the view.
+  const sy = ch - VIEW_BACK * sc, frontY = sy - (s.z + radius(s.n) - o.cam) * sc;
+  const squadGone = !o.scroll || s.n <= 0 || frontY > ch + 30 * sc;
+  if ((!s.shots.length && squadGone) || o.t > OUTRO_MAX) { o.finished = true; cardTimer = setTimeout(o.done, 250); }
 }
 function starHtml(n) { let h = ''; for (let i = 0; i < 3; i++) h += i < n ? '★' : '<span class="off">★</span>'; return h; }
 
@@ -455,8 +470,9 @@ cv.addEventListener('pointercancel', endDrag);
 function render(now) {
   const s = cur, lv = LEVELS[s.li];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const sy = ch - VIEW_BACK * sc, Y = z => sy - (z - s.z) * sc, X = x => ox + x * sc;
-  const zTop = s.z + sy / sc + 40, zBot = s.z - (ch - sy) / sc - 40;
+  const cz = outro ? outro.cam : s.z;   // camera follows the squad, except during the outro
+  const sy = ch - VIEW_BACK * sc, Y = z => sy - (z - cz) * sc, X = x => ox + x * sc;
+  const zTop = cz + sy / sc + 40, zBot = cz - (ch - sy) / sc - 40;
   ctx.fillStyle = col.shoulder; ctx.fillRect(0, 0, cw, ch);
   ctx.fillStyle = col.road; ctx.fillRect(X(0), 0, W * sc, ch);
   // Scrolling centre dashes and edge bands
@@ -523,8 +539,9 @@ function render(now) {
   const sr = 4.5 * sc;
   ctx.fillStyle = col.squad; ctx.strokeStyle = col['squad-dark']; ctx.lineWidth = 1.2 * sc;
   ctx.beginPath();
-  const drawN = Math.min(s.n, DRAW_MAX), pos = [];
-  for (let i = 0; i < drawN; i++) { const o = off(Math.floor(i * s.n / drawN), s.n); pos.push([X(s.x + o[0]), Y(s.z + o[1])]); }
+  // Draw a full, even formation of up to SPREAD figures (sampling a bigger spiral by stride makes pinwheel arms).
+  const drawN = Math.min(s.n, SPREAD), pos = [];
+  for (let i = 0; i < drawN; i++) { const o = off(i, drawN); pos.push([X(s.x + o[0]), Y(s.z + o[1])]); }
   for (const [x, y] of pos) { ctx.moveTo(x + sr, y); ctx.arc(x, y, sr, 0, 7); }
   ctx.fill(); ctx.stroke();
   ctx.strokeStyle = col['squad-dark']; ctx.lineWidth = 1.6 * sc; ctx.beginPath();
@@ -572,7 +589,7 @@ function frame(now) {
     acc += dt;
     while (acc >= STEP && !cur.over) { liveTick(); acc -= STEP; }
     if (cur.over) finish();
-  }
+  } else if (outro) stepOutro(dt);
   render(now); updateHud();
   requestAnimationFrame(frame);
 }
