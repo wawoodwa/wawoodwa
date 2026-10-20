@@ -8,9 +8,10 @@ Build me a new mobile game. **[Describe the game here.]**
 
 My games live in `wawoodwa/wawoodwa`, my GitHub profile repo, one directory per game. `README.md` there is my profile page, so don't change it. List each game in `GAMES.md` instead. Read the repo `CLAUDE.md` first.
 
-Two games exist already. Read their `CLAUDE.md` files and reuse the approach, not the games:
+Three games exist already. Read their `CLAUDE.md` files and reuse the approach, not the games:
 - **Span Sketch** (`bridge-game/`): a bridge-drawing physics puzzle with 100 levels. `bridge-game/tools/playtest.js` is a headless Playwright playtester. Live: https://claude.ai/artifact/1YkSDNx7R8XVEyoGAhi553
 - **Squad Surge** (`squad-game/`): a squad runner shooter. Live: https://claude.ai/artifact/8ik6JLBA8QhFJZcgQFFbLe
+- **Dot Link** (`link-game/`): a free-drawing link puzzle scored by total line length. `link-game/tools/solve.js` solves levels to set star thresholds. Live: https://claude.ai/artifact/B2r2i4xd1v49b3fY6bPfG1
 
 Put the new game in its own directory and add it to `GAMES.md`.
 

@@ -2,7 +2,7 @@
 
 A portrait-phone puzzle. Each colour has two dots. The player draws any curve from a dot to its match. Lines can't cross each other, touch another colour's dot, or run through walls and posts. When every pair is linked, the score is the **total line length** (shorter is better). 12 levels.
 
-- **Live page:** published from `index.html` (link in `GAMES.md`).
+- **Live page:** https://claude.ai/artifact/B2r2i4xd1v49b3fY6bPfG1 (published from `index.html`)
 - **Repo:** `wawoodwa/wawoodwa`, directory `link-game/`. Never edit the repo's `README.md` (the owner's profile page).
 
 ## Files
