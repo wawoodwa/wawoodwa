@@ -71,7 +71,12 @@ const waitState = (page, s, ms) => page.waitForFunction(st => window.__game.stat
     const ok3 = r.state === 'won' && r.on === 3 && r.len <= lv.three && /^Great job!/.test(r.text) && r.card;
     console.log(`${String(i + 1).padStart(2)} ${lv.name.padEnd(16)} drawn ${r.len.toFixed(1).padStart(7)}  solver ${sol.total.toFixed(1).padStart(7)}  3★ ≤ ${lv.three}  2★ ≤ ${lv.two}  ${ok3 ? '3★ ok' : ''}`);
     if (!ok3) fail(`${i + 1} ${lv.name}:`, JSON.stringify(r));
-    if (shotDir) await page.screenshot({ path: path.join(shotDir, `${String(i + 1).padStart(2, '0')}-won.png`) });
+    if (shotDir) {   // the finished board with the card hidden (tap the board), then tap again to bring the card back
+      const [bx, by] = await page.evaluate(() => window.__game.toClient(180, 20));
+      await page.mouse.click(bx, by);
+      await page.screenshot({ path: path.join(shotDir, `${String(i + 1).padStart(2, '0')}-won.png`) });
+      await page.mouse.click(bx, by);
+    }
     // Replay and Best play back, then return to the won board with its card.
     for (const btn of ['#btnReplay', '#bestBtn']) {
       await page.click(btn);
