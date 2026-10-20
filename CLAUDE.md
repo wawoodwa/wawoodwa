@@ -5,3 +5,6 @@ This is the owner's GitHub profile repo. `README.md` is their profile page: **le
 - **Layout:** each game gets its own top-level directory (`bridge-game/`, ...) containing `index.html`, a `CLAUDE.md` for that game and any `tools/`. Add a row for each new game to the table in `GAMES.md`, not `README.md`.
 - **Start here:** read the `CLAUDE.md` inside the game you're working on. A game directory may also have a `HANDOFF.md` with a ready prompt for its next round of work. For a new game, read `HANDOFF.md` and `bridge-game/CLAUDE.md`. Span Sketch shows the conventions: publishing, headless playtesting and level design.
 - **Git:** work on a branch, commit and push after each change, and open a pull request only when asked.
+
+## Resources
+- **docs/game_build_workflow.md** -- how to build, test, publish and merge changes to these games, with lessons learned and open items. Load it before any work on a game.
